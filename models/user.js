@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const schema = mongoose.Schema;
+const bcrypt = require('bcryptjs');
 
 
 //TODO: Fix validation for the schema
@@ -32,11 +33,26 @@ const userSchema = new schema({
                 message: props => `${props.value} The password needs to be atleast 8 characters long and have atleast one number and one special character.`
             }*/
         },
+    },
+    google: {
+        id: String,
+        token: String,
+        email: String,
+        name: String,
     }
 
 });
 
 userSchema.set('toObject', { getters: true });
 userSchema.set('toJSON', { getters: true });
+
+userSchema.methods.generateHash = function(password){
+    return bcrypt.hashSync(password, bcrypt.genSaltSync(10), null);
+}
+
+userSchema.methods.validPassword = function(password){
+    return bcrypt.compareSync(password, this.local.password);
+}
+
 
 module.exports = mongoose.model('User', userSchema);
