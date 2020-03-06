@@ -4,8 +4,8 @@ const bcrypt = require('bcryptjs');
 
 
 //TODO: Fix validation for the schema
-
 const emailRegex = new RegExp('^(([^<>()\\[\\]\\.,;:\\s@"]+(\\.[^<>()\[\]\\.,;:\\s@"]+)*)|(".+"))@((\\[[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}])|(([a-zA-Z\\-0-9]+\\.)+[a-zA-Z]{2,}))$');
+const passwordRegex = new RegExp('^.*(?=.{8,})(?=.*[a-zA-Z])(?=.*\\d)(?=.*[!#$%&? "]).*$');
 
 const userSchema = new schema({
     name: { type: String, required: true },
@@ -50,9 +50,12 @@ userSchema.methods.generateHash = function(password){
     return bcrypt.hashSync(password, bcrypt.genSaltSync(10), null);
 }
 
-userSchema.methods.validPassword = function(password){
+userSchema.methods.validHashedPassword = function(password){
     return bcrypt.compareSync(password, this.local.password);
 }
 
+userSchema.methods.validPassword = function(password){
+    return passwordRegex.test(password)
+}
 
 module.exports = mongoose.model('User', userSchema);

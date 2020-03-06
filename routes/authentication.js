@@ -1,24 +1,32 @@
 
 module.exports = function(app, passport){
 
+
+
     app.get('/login', function(req, res){
-        res.send('Hello login!');
+        res.send(req.flash('login-error'));
     });
-    
-    app.get('/logout', function(req, res){
-        req.logOut();
-        res.redirect('/');
-    });
+
+    app.post('/login', passport.authenticate('local-login', {
+        succesRedirect:'/users',
+        failureRedirect: '/login',
+        failureFlash: true
+    }));
     
     app.get('/signup', function(req, res){
         res.send(req.flash('error'));
     });
-    
+
     app.post('/signup', passport.authenticate('local-signup', {
         succesRedirect: '/users',
         failureRedirect: '/signup',
         failureFlash: true
     }));
+
+    app.get('/logout', function(req, res){
+        req.logOut();
+        res.redirect('/');
+    });
 }
 
     /*The password needs to contain the following:
