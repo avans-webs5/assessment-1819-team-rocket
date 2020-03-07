@@ -1,7 +1,15 @@
-const localStrategy = require('passport-local').Strategy;
+const localStrategy     = require('passport-local').Strategy;
+const facebookStrategy  = require('passport')
+
 const User          = require('../models/user');
+const configAuth    = require('./auth');
 
 module.exports = function(passport){
+
+    // =========================================================================
+    // LOCAL ===================================================================
+    // =========================================================================
+
     passport.serializeUser(function(user, done){
         done(null, user.id);
     });
@@ -62,6 +70,42 @@ module.exports = function(passport){
                 
                 if(!user.validHashedPassword(password)) return done(null, false, req.flash('login-error', 'Password is incorrect.'));
                 return done(null, user);
+            });
+        });
+    }));
+
+    // =========================================================================
+    // FACEBOOK ================================================================
+    // =========================================================================
+
+    passport.use(new facebookStrategy({
+        clientID: configAuth.facebookAuth.clientID,
+        clientSecret: configAuth.facebookAuth.clientSecret,
+        callbackURL: configAuth.facebookAuth.callbackURL
+    },
+    function(token, refreshToken, profile, done){
+        process.nextTick(function(){
+            User.findOne({ 'facebook.id' : profile.id}, function(err, user){
+                if(err)
+                    return done(err);
+
+                if(user){
+                    return done(null, user);
+                } else {
+                    let newUser = new User();
+
+                    newUser.facebook.id = profile.id;
+                    newUser.facebook.token = token;
+                    newUser.facebook.name = profile.name;
+                    newUser.facebook.email = profile.email;
+
+                    newUser.save(function(err){
+                        if(err)
+                            throw err;
+
+                            return done(null, newUser);
+                    })
+                }
             });
         });
     }));
