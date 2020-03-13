@@ -1,7 +1,7 @@
 module.exports = function(app,passport) {
         
     require('./authentication')(app,passport);
-    app.use('/users', isLoggedIn, require('./users'));
+    app.use('/users', passport.authenticate('jwt', {session: false}), require('./users'));
 
     function isLoggedIn(req, res, next) {
 
@@ -10,6 +10,6 @@ module.exports = function(app,passport) {
             return next();
     
         // if they aren't redirect them to the home page
-        res.status(403);
+        res.redirect('/');
     }
 }

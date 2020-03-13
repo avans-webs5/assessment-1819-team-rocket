@@ -1,7 +1,6 @@
+const jwt = require('jsonwebtoken');
 
 module.exports = function(app, passport){
-
-
 
     app.get('/login', function(req, res){
         res.send(req.flash('login-error'));
@@ -11,7 +10,12 @@ module.exports = function(app, passport){
         succesRedirect:'/users',
         failureRedirect: '/login',
         failureFlash: true
-    }));
+    }), function(req, res){
+
+        let payload = { id: req.user._id }
+        let token = jwt.sign(payload, 'ilovestormstormisthebestoftheworld!');
+        res.json({message: "ok", token: token});
+    });
     
     app.get('/signup', function(req, res){
         res.send(req.flash('error'));
@@ -21,13 +25,40 @@ module.exports = function(app, passport){
         succesRedirect: '/login',
         failureRedirect: '/signup',
         failureFlash: true
+    }), function(req, res){
+        let payload = { id: req.user._id }
+        let token = jwt.sign(payload, 'ilovestormstormisthebestoftheworld!');
+        res.json({message: "ok", token: token});
+    });
+
+    app.get('/auth/facebook', passport.authenticate('facebook', {
+        scope: ['email', 'public_profile']
+    }));
+
+    app.get('/auth/facebook/callback', passport.authenticate('facebook', {
+        successRedirect: '/users',
+        failureRedirect: '/'
+    }));
+
+    app.get('/auth/google', passport.authenticate('google', {
+        response_type: 'code',
+        scope: ['email', 'profile']
+    }));
+
+    app.get('/auth/google/callback', passport.authenticate('google', {
+        successRedirect: '/users',
+        failureRedirect: '/'
     }));
 
     app.get('/logout', function(req, res){
         req.logOut();
         res.redirect('/');
     });
+
+
 }
+
+
 
     /*The password needs to contain the following:
         - minimal 8 characters

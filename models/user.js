@@ -10,10 +10,13 @@ const passwordRegex = new RegExp('^.*(?=.{8,})(?=.*[a-zA-Z])(?=.*\\d)(?=.*[!#$%&
 const userSchema = new schema({
     name: { type: String, required: true },
     profile_picture: { type: String },
+    created: {
+        type: Date,
+        default: Date.now
+    },
     local: {
         email: { 
             type: String, 
-            required: true,
             
             validate: {
                 validator: function(v){
@@ -24,7 +27,6 @@ const userSchema = new schema({
         },
         password: { 
             type: String, 
-            required: true,
             
             /*validate: {
                 validator: function(v){
@@ -38,13 +40,11 @@ const userSchema = new schema({
         id: String,
         token: String,
         email: String,
-        name: String
     },
     google: {
         id: String,
         token: String,
         email: String,
-        name: String,
     }
 
 });

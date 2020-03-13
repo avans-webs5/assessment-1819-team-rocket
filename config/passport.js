@@ -1,5 +1,10 @@
 const localStrategy     = require('passport-local').Strategy;
-const facebookStrategy  = require('passport')
+const facebookStrategy  = require('passport-facebook').Strategy;
+const googleStrategy    = require('passport-google-oauth20').Strategy;
+
+const passportJWT       = require('passport-jwt');
+const extractJWT        = passportJWT.ExtractJwt;
+const jwtStrategy       = passportJWT.Strategy;
 
 const User          = require('../models/user');
 const configAuth    = require('./auth');
@@ -81,7 +86,8 @@ module.exports = function(passport){
     passport.use(new facebookStrategy({
         clientID: configAuth.facebookAuth.clientID,
         clientSecret: configAuth.facebookAuth.clientSecret,
-        callbackURL: configAuth.facebookAuth.callbackURL
+        callbackURL: configAuth.facebookAuth.callbackURL,
+        profileFields: ['id', 'displayName', 'email']
     },
     function(token, refreshToken, profile, done){
         process.nextTick(function(){
@@ -94,10 +100,11 @@ module.exports = function(passport){
                 } else {
                     let newUser = new User();
 
+                
                     newUser.facebook.id = profile.id;
                     newUser.facebook.token = token;
-                    newUser.facebook.name = profile.name;
-                    newUser.facebook.email = profile.email;
+                    newUser.name = profile.displayName
+                    newUser.facebook.email = profile.emails[0].value
 
                     newUser.save(function(err){
                         if(err)
@@ -105,6 +112,65 @@ module.exports = function(passport){
 
                             return done(null, newUser);
                     })
+                }
+            });
+        });
+    }));
+
+    // =========================================================================
+    // GOOGLE===================================================================
+    // =========================================================================
+
+    passport.use(new googleStrategy({
+        clientID: configAuth.googleAuth.clientID,
+        clientSecret: configAuth.googleAuth.clientSecret,
+        callbackURL: configAuth.googleAuth.callbackURL,
+    },
+    function(token, refreshToken, profile, done){
+        process.nextTick(function(){
+            User.findOne({'google.id': profile.id}, function(err, user){
+                if(err)
+                    return done(err);
+                if(user) {
+                    return done(user);
+                } else {
+                    let newUser = new User();
+
+                    newUser.google.id = profile.id;
+                    newUser.google.token = token;
+                    newUser.name = profile.displayName;
+                    newUser.google.email = profile.emails[0].value;
+
+                    newUser.save(function(err){
+                        if(err) throw err;
+                        return done(null, newUser);
+                    });
+                }   
+            });
+        });
+    }));
+
+    // =========================================================================
+    // JWT======================================================================
+    // =========================================================================
+
+    //TODO: Maak secret globaal zodat als je hem veranderd het mee veranderd als het ge-encrypt wordt
+    passport.use(new jwtStrategy({
+        jwtFromRequest: extractJWT.fromAuthHeaderAsBearerToken(),
+        secretOrKey: 'ilovestormstormisthebestoftheworld!'
+    }, function(payload, done){
+        console.log('CHECK!');
+        process.nextTick(function(){
+            User.findOne({_id: payload.id}, function(err, user){
+                console.log(payload);
+                if (err) {
+                    return done(err, false);
+                }
+                if (user) {
+                    return done(null, user);
+                } else {
+                    return done(null, false);
+                    // or you could create a new account
                 }
             });
         });
