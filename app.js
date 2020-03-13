@@ -2,6 +2,8 @@ const express       = require('express');
 const mongoose      = require('mongoose');
 const passport      = require('passport');
 
+
+
 const port          = process.env.port || 3000
 
 const bodyParser    = require('body-parser');
@@ -15,8 +17,14 @@ const app           = express();
 
 const secret = 'ilovestormstormisthebestoftheworld!'
 
-//Data acces layer
+// Enable CORS with (origin: *) in development mode
+if(process.env.NODE_ENV === "development")
+{
+    const cors = require('cors');
+    app.use(cors());
+}
 
+//Data acces layer
 mongoose.connect('mongodb://localhost:27017/chatroom-socketio', {useNewUrlParser: true, useUnifiedTopology: true})
 .then(() => {
     console.log('Database connected!');
