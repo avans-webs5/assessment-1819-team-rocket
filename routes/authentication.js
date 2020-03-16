@@ -26,7 +26,7 @@ module.exports = function(app, passport){
             created: req.user.created
         };
 
-        res.status(200).json({ user: user, statusCode: 200, message: "ok" });
+        res.status(200).json({ user: user, statusCode: 200, message: "OK" });
     });
 
     app.all('/login', function(req, res){
@@ -37,9 +37,17 @@ module.exports = function(app, passport){
     //SIGNUP////////////////////////////////////
     ///////////////////////////////////////////
 
-    app.post('/signup', passport.authenticate('local-signup'), function(req, res){
+    app.post('/signup', passport.authenticate('local-signup',  { failureRedirect : '/', failureFlash: true }), function(req, res){
         let token = generateTokenResponse(req);
-        res.status(201).json({token: token});
+        let user = { 
+            id: req.user._id,
+            name: req.user.name,
+            email: req.user.local.email,
+            token: token,
+            created: req.user.created
+        };
+
+        res.status(201).json({ user: user, statusCode: 201, message: "Created" });
     });
 
     app.all('/signup', function(req, res){

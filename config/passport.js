@@ -36,13 +36,13 @@ module.exports = function(passport){
                 if(err) return done(err);
                 
                 if(user){
-                    return done(null, false, req.flash('error', 'That email is already taken.'));
+                    return done(null, false, req.flash('error', '{ "statusCode" : 400, "message" : "That email is already taken." }'));
                 } else {
                     let username = email.slice(0, email.lastIndexOf("@"));
                     let newUser = new User();
    
                     if(!newUser.validPassword(password)) {
-                        return done(null, false, req.flash('error', 'The password needs to contain minimal 8 characters, atleast 1 number, atleast 1 letter and atleast 1 unique character !#$%?'));
+                        return done(null, false, req.flash('error', ' { "statusCode" : 400, "message" : "The password needs to contain minimal 8 characters, atleast 1 number, atleast 1 letter and atleast 1 unique character !#$%?" }'));
                     }
 
                     newUser.name = username;
