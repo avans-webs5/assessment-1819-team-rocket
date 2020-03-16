@@ -1,61 +1,117 @@
-const jwt = require('jsonwebtoken');
+const jwt       = require('jsonwebtoken');
+const secret    = require('../config/auth').JWS.secret
 
 module.exports = function(app, passport){
 
-    app.get('/login', function(req, res){
-        res.send(req.flash('login-error'));
+    app.get('/', function(req, res){
+        let error = req.flash('error');
+        if(error == '') {
+            return res.status(401).json({ statusCode : 401, message : "Unauthorized access!" });
+        }
+        res.status(400).json(JSON.parse(error));
     });
 
-    app.post('/login', passport.authenticate('local-login', {
-        succesRedirect:'/users',
-        failureRedirect: '/login',
-        failureFlash: true
-    }), function(req, res){
 
-        let payload = { id: req.user._id }
-        let token = jwt.sign(payload, 'ilovestormstormisthebestoftheworld!');
-        res.json({message: "ok", token: token});
-    });
-    
-    app.get('/signup', function(req, res){
-        res.send(req.flash('error'));
+    /////////////////////////////////////////////
+    //LOGIN/////////////////////////////////////
+    ///////////////////////////////////////////
+
+    app.post('/login', passport.authenticate('local-login', { failureRedirect : '/', failureFlash: true }), function(req, res){
+        let token = generateTokenResponse(req);
+        let user = { 
+            id: req.user._id,
+            name: req.user.name,
+            email: req.user.local.email,
+            token: token,
+            created: req.user.created
+        };
+
+        res.status(200).json({ user: user, statusCode: 200, message: "ok" });
     });
 
-    app.post('/signup', passport.authenticate('local-signup', {
-        succesRedirect: '/login',
-        failureRedirect: '/signup',
-        failureFlash: true
-    }), function(req, res){
-        let payload = { id: req.user._id }
-        let token = jwt.sign(payload, 'ilovestormstormisthebestoftheworld!');
-        res.json({message: "ok", token: token});
+    app.all('/login', function(req, res){
+        res.status(405).json({ Allow: 'POST' });
     });
+
+    /////////////////////////////////////////////
+    //SIGNUP////////////////////////////////////
+    ///////////////////////////////////////////
+
+    app.post('/signup', passport.authenticate('local-signup'), function(req, res){
+        let token = generateTokenResponse(req);
+        res.status(201).json({token: token});
+    });
+
+    app.all('/signup', function(req, res){
+        res.status(405).json({ Allow: 'POST' });
+    });
+
+    /////////////////////////////////////////////
+    //LOGIN: FACEBOOK///////////////////////////
+    ///////////////////////////////////////////
+
 
     app.get('/auth/facebook', passport.authenticate('facebook', {
         scope: ['email', 'public_profile']
     }));
 
-    app.get('/auth/facebook/callback', passport.authenticate('facebook', {
-        successRedirect: '/users',
-        failureRedirect: '/'
-    }));
+    app.all('/auth/facebook', function(req, res){
+        res.status(405).json({ Allow: 'GET' });
+    });
+
+    app.get('/auth/facebook/callback', passport.authenticate('facebook'), function (req, res) {
+        let token = generateTokenResponse(req);
+        res.status(200).json({token: token});
+    });
+
+    app.all('/auth/facebook/callback', function(req, res){
+        res.status(405).json({ Allow: 'GET' });
+    });
+
+    /////////////////////////////////////////////
+    //LOGIN: GOOGLE/////////////////////////////
+    ///////////////////////////////////////////
 
     app.get('/auth/google', passport.authenticate('google', {
         response_type: 'code',
         scope: ['email', 'profile']
     }));
 
-    app.get('/auth/google/callback', passport.authenticate('google', {
-        successRedirect: '/users',
-        failureRedirect: '/'
-    }));
+    app.all('/auth/google', function(req, res){
+        res.status(405).json({ Allow: 'GET' });
+    });
+
+    app.get('/auth/google/callback', passport.authenticate('google'), function(req, res){
+        let token = generateTokenResponse(req);
+        res.status(200).json({token: token});
+    });
+
+    app.all('/auth/google/callback', function(req, res){
+        res.status(405).json({ Allow: 'GET' });
+    });
+
+    /////////////////////////////////////////////
+    //LOGOUT////////////////////////////////////
+    ///////////////////////////////////////////
 
     app.get('/logout', function(req, res){
         req.logOut();
         res.redirect('/');
     });
 
+    app.all('/logout', function(req, res){
+        res.status(405).json({ Allow: 'GET' });
+    });
 
+
+    function generateTokenResponse(req){
+        console.log(req);
+
+        let payload = { id: req.user._id }
+        let token = jwt.sign(payload, secret);
+
+        return token;
+    }   
 }
 
 

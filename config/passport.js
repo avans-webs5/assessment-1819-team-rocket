@@ -71,9 +71,9 @@ module.exports = function(passport){
                 }
     
                 if(!user)
-                    return done(null, false, req.flash('login-error', 'No user found.'));
+                    return done(null, false,  req.flash('error', '{ "statusCode" : 400, "message" : "User not found!"}'));
                 
-                if(!user.validHashedPassword(password)) return done(null, false, req.flash('login-error', 'Password is incorrect.'));
+                if(!user.validHashedPassword(password)) return done(null, false, req.flash('error', '{ "statusCode" : 400, "message" : "Password is incorrect!"}'));
                 return done(null, user);
             });
         });
@@ -157,9 +157,8 @@ module.exports = function(passport){
     //TODO: Maak secret globaal zodat als je hem veranderd het mee veranderd als het ge-encrypt wordt
     passport.use(new jwtStrategy({
         jwtFromRequest: extractJWT.fromAuthHeaderAsBearerToken(),
-        secretOrKey: 'ilovestormstormisthebestoftheworld!'
+        secretOrKey: configAuth.JWS.secret
     }, function(payload, done){
-        console.log('CHECK!');
         process.nextTick(function(){
             User.findOne({_id: payload.id}, function(err, user){
                 console.log(payload);
@@ -170,7 +169,6 @@ module.exports = function(passport){
                     return done(null, user);
                 } else {
                     return done(null, false);
-                    // or you could create a new account
                 }
             });
         });

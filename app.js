@@ -2,8 +2,6 @@ const express       = require('express');
 const mongoose      = require('mongoose');
 const passport      = require('passport');
 
-
-
 const port          = process.env.port || 3000
 
 const bodyParser    = require('body-parser');
@@ -13,9 +11,11 @@ const flash         = require('connect-flash');
 const session       = require('express-session');
 const morgan        = require('morgan');
 
+const database      = require('./config/database');
+
 const app           = express();
 
-const secret = 'ilovestormstormisthebestoftheworld!'
+const secret        = require('./config/auth').JWS.secret; 
 
 // Enable CORS with (origin: *) in development mode
 if(process.env.NODE_ENV === "development")
@@ -25,7 +25,7 @@ if(process.env.NODE_ENV === "development")
 }
 
 //Data acces layer
-mongoose.connect('mongodb://localhost:27017/chatroom-socketio', {useNewUrlParser: true, useUnifiedTopology: true})
+mongoose.connect(database.connection, {useNewUrlParser: true, useUnifiedTopology: true})
 .then(() => {
     console.log('Database connected!');
 }).catch(err => {
@@ -44,7 +44,7 @@ app.use(bodyParser.urlencoded({
 
 //Password js
 
-app.use(session({secret: secret}));
+app.use(session({secret: secret, resave: true, saveUninitialized: false}));
 app.use(passport.initialize());
 app.use(passport.session());
 

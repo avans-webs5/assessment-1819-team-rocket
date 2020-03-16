@@ -12,6 +12,9 @@ module.exports = {
         'clientID'      : '176114730172-vj827q3bdreo342ac3gcqad2ba1pdlch.apps.googleusercontent.com',
         'clientSecret'  : 'LKY8J2l5lj90ClyAvlnSC4FQ',
         'callbackURL'   : 'http://localhost:3000/auth/google/callback'
+    },
+    JWS: {
+        'secret'        : 'ilovestormstormisthebestoftheworld!'
     }
 
 };
