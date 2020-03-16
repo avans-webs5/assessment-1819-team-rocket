@@ -92,15 +92,17 @@ module.exports = function(passport){
     function(token, refreshToken, profile, done){
         process.nextTick(function(){
             User.findOne({ 'facebook.id' : profile.id}, function(err, user){
-                if(err)
+                if(err){
+                    console.log(err);
                     return done(err);
+                }
+                    
 
                 if(user){
                     return done(null, user);
                 } else {
                     let newUser = new User();
-
-                
+                    
                     newUser.facebook.id = profile.id;
                     newUser.facebook.token = token;
                     newUser.name = profile.displayName
@@ -129,17 +131,22 @@ module.exports = function(passport){
     function(token, refreshToken, profile, done){
         process.nextTick(function(){
             User.findOne({'google.id': profile.id}, function(err, user){
-                if(err)
+                if(err){
+                    console.log(err);
                     return done(err);
+                }
+
                 if(user) {
-                    return done(user);
+                    return done(null, user);
+
                 } else {
                     let newUser = new User();
 
                     newUser.google.id = profile.id;
                     newUser.google.token = token;
                     newUser.name = profile.displayName;
-                    newUser.google.email = profile.emails[0].value;
+                    newUser.profile_picture = profile.photos[0].value
+                    newUser.google.email = profile.emails[0].value
 
                     newUser.save(function(err){
                         if(err) throw err;
@@ -161,7 +168,6 @@ module.exports = function(passport){
     }, function(payload, done){
         process.nextTick(function(){
             User.findOne({_id: payload.id}, function(err, user){
-                console.log(payload);
                 if (err) {
                     return done(err, false);
                 }

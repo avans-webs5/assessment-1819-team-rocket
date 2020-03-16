@@ -3,7 +3,7 @@ const secret    = require('../config/auth').JWS.secret
 
 module.exports = function(app, passport){
 
-    app.get('/', function(req, res){
+    app.all('/', function(req, res){
         let error = req.flash('error');
         if(error == '') {
             return res.status(401).json({ statusCode : 401, message : "Unauthorized access!" });
@@ -30,7 +30,7 @@ module.exports = function(app, passport){
     });
 
     app.all('/login', function(req, res){
-        res.status(405).json({ Allow: 'POST' });
+        res.status(405).json({ statusCode : 405, message: "Method Not Allowed", Allow : "POST" });
     });
 
     /////////////////////////////////////////////
@@ -51,7 +51,7 @@ module.exports = function(app, passport){
     });
 
     app.all('/signup', function(req, res){
-        res.status(405).json({ Allow: 'POST' });
+        res.status(405).json({ statusCode : 405, message: "Method Not Allowed", Allow : "POST" });
     });
 
     /////////////////////////////////////////////
@@ -64,16 +64,25 @@ module.exports = function(app, passport){
     }));
 
     app.all('/auth/facebook', function(req, res){
-        res.status(405).json({ Allow: 'GET' });
+        res.status(405).json({ statusCode : 405, message: "Method Not Allowed", Allow : "GET" });
     });
 
     app.get('/auth/facebook/callback', passport.authenticate('facebook'), function (req, res) {
         let token = generateTokenResponse(req);
-        res.status(200).json({token: token});
+        let user = { 
+            id: req.user._id,
+            name: req.user.name,
+            email: req.user.facebook.email,
+            facebook_token: req.user.facebook.token,
+            token: token,
+            created: req.user.created
+        };
+
+        res.status(200).json({user: user, statusCode: 200, message: "OK"});
     });
 
     app.all('/auth/facebook/callback', function(req, res){
-        res.status(405).json({ Allow: 'GET' });
+        res.status(405).json({ statusCode : 405, message: "Method Not Allowed", Allow : "GET" });
     });
 
     /////////////////////////////////////////////
@@ -86,16 +95,25 @@ module.exports = function(app, passport){
     }));
 
     app.all('/auth/google', function(req, res){
-        res.status(405).json({ Allow: 'GET' });
+        res.status(405).json({ statusCode : 405, message: "Method Not Allowed", Allow : "GET" });
     });
 
     app.get('/auth/google/callback', passport.authenticate('google'), function(req, res){
         let token = generateTokenResponse(req);
-        res.status(200).json({token: token});
+        let user = { 
+            id: req.user._id,
+            name: req.user.name,
+            email: req.user.google.email,
+            google_token: req.user.google.token,
+            token: token,
+            created: req.user.created
+        };
+
+        res.status(200).json({user: user, statusCode: 200, message: "OK"});
     });
 
     app.all('/auth/google/callback', function(req, res){
-        res.status(405).json({ Allow: 'GET' });
+        res.status(405).json({ statusCode : 405, message: "Method Not Allowed", Allow : "GET" });
     });
 
     /////////////////////////////////////////////
@@ -108,7 +126,7 @@ module.exports = function(app, passport){
     });
 
     app.all('/logout', function(req, res){
-        res.status(405).json({ Allow: 'GET' });
+        res.status(405).json({ statusCode : 405, message: "Method Not Allowed", Allow : "GET" });
     });
 
 
