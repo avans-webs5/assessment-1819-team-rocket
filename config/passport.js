@@ -88,36 +88,50 @@ module.exports = function(passport){
         clientID: configAuth.facebookAuth.clientID,
         clientSecret: configAuth.facebookAuth.clientSecret,
         callbackURL: configAuth.facebookAuth.callbackURL,
-        profileFields: ['id', 'displayName', 'email']
+        profileFields: ['id', 'displayName', 'email'],
+        passReqToCallback: true
     },
-    function(token, refreshToken, profile, done){
+    function(req, token, refreshToken, profile, done){
         process.nextTick(function(){
-            User.findOne({ 'facebook.id' : profile.id}, function(err, user){
-                if(err){
-                    console.log(err);
-                    return done(err);
-                }
-                    
+            if(!req.user){
+                User.findOne({ 'facebook.id' : profile.id}, function(err, user){
+                    if(err){
+                        console.log(err);
+                        return done(err);
+                    }
+                        
+                    if(user){
+                        return done(null, user);
+                    } else {
+                        let newUser = new User();
+                        
+                        newUser.facebook.id = profile.id;
+                        newUser.facebook.token = token;
+                        newUser.name = profile.displayName
+                        newUser.facebook.email = profile.emails[0].value
+    
+                        newUser.save(function(err){
+                            if(err)
+                                throw err;
+    
+                                return done(null, newUser);
+                        })
+                    }
+                });
+            } else {
+                let user = req.user;
+                user.facebook.id = profile.id;
+                user.facebook.token = token;
+                user.name = profile.displayName
+                user.facebook.email = profile.emails[0].value
 
-                if(user){
+                user.save(function(err){
+                    if(err)
+                        throw err;
+
                     return done(null, user);
-                } else {
-                    let newUser = new User();
-                    
-                    newUser.facebook.id = profile.id;
-                    newUser.facebook.token = token;
-                    newUser.provider = "facebook"
-                    newUser.name = profile.displayName
-                    newUser.facebook.email = profile.emails[0].value
-
-                    newUser.save(function(err){
-                        if(err)
-                            throw err;
-
-                            return done(null, newUser);
-                    })
-                }
-            });
+                });
+            }
         });
     }));
 
@@ -146,7 +160,6 @@ module.exports = function(passport){
 
                     newUser.google.id = profile.id;
                     newUser.google.token = token;
-                    newUser.provider = "google"
                     newUser.name = profile.displayName;
                     newUser.profile_picture = profile.photos[0].value
                     newUser.google.email = profile.emails[0].value

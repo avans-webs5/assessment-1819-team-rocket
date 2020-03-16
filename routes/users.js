@@ -23,4 +23,8 @@ router.get('/', function(req, res) {
         });
 });
 
+router.all('/', function(req, res){
+
+});
+
 module.exports = router;

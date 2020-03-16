@@ -73,9 +73,8 @@ module.exports = function(app, passport){
             id: req.user._id,
             name: req.user.name,
             email: req.user.facebook.email,
-            facebook_token: req.user.facebook.token,
             token: token,
-            provider_token: { provider: req.user.provider, token: req.user.google.token || req.user.facebook.token },
+            provider_token: { provider: "facebook", token: req.user.facebook.token },
             created: req.user.created
         };
 
@@ -106,7 +105,7 @@ module.exports = function(app, passport){
             name: req.user.name,
             email: req.user.google.email,
             token: token,
-            provider_token: { provider: req.user.provider, token: req.user.google.token || req.user.facebook.token },
+            provider_token: { provider: "google", token: req.user.google.token },
             created: req.user.created
         };
 
@@ -132,12 +131,38 @@ module.exports = function(app, passport){
 
 
     /////////////////////////////////////////////
-    //CONNECT//////////////
+    //CONNECT: LOCAL////////////////////////////
     ///////////////////////////////////////////
 
     app.post('/connect/local', passport.authenticate('local-signup', { failureRedirect : '/', failureFlash : true }), function(req, res){
         res.status(200).json({statusCode: 200, message: "OK"});
     });
+
+    app.all('/connect/local', function(req, res){
+        res.status(405).json({ statusCode : 405, message: "Method Not Allowed", Allow : "POST" });
+    });
+
+    /////////////////////////////////////////////
+    //CONNECT: FACEBOOK/////////////////////////
+    ///////////////////////////////////////////
+
+    app.get('/connect/facebook', passport.authorize('facebook', { scope : ['public_profile', 'email'] }));
+
+    app.get('/connect/facebook/callback',passport.authorize('facebook', {failureRedirect : '/'}), function(req, res){
+        res.status(200).json({statusCode: 200, message: "OK"});
+    });
+
+
+    /////////////////////////////////////////////
+    //CONNECT: GOOGLE///////////////////////////
+    ///////////////////////////////////////////
+
+    app.get('/connect/google', passport.authorize('google', { scope : ['profile', 'email'] }));
+
+    // the callback after google has authorized the user
+    app.get('/connect/google/callback', passport.authorize('google', { failureRedirect : '/' }), function(req, res){
+        res.status(200).json({statusCode: 200, message: "OK"});
+    });    
 
 
     function generateTokenResponse(req){
