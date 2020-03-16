@@ -75,6 +75,7 @@ module.exports = function(app, passport){
             email: req.user.facebook.email,
             facebook_token: req.user.facebook.token,
             token: token,
+            provider_token: { provider: req.user.provider, token: req.user.google.token || req.user.facebook.token },
             created: req.user.created
         };
 
@@ -104,8 +105,8 @@ module.exports = function(app, passport){
             id: req.user._id,
             name: req.user.name,
             email: req.user.google.email,
-            google_token: req.user.google.token,
             token: token,
+            provider_token: { provider: req.user.provider, token: req.user.google.token || req.user.facebook.token },
             created: req.user.created
         };
 
@@ -130,9 +131,16 @@ module.exports = function(app, passport){
     });
 
 
-    function generateTokenResponse(req){
-        console.log(req);
+    /////////////////////////////////////////////
+    //CONNECT//////////////
+    ///////////////////////////////////////////
 
+    app.post('/connect/local', passport.authenticate('local-signup', { failureRedirect : '/', failureFlash : true }), function(req, res){
+        res.status(200).json({statusCode: 200, message: "OK"});
+    });
+
+
+    function generateTokenResponse(req){
         let payload = { id: req.user._id }
         let token = jwt.sign(payload, secret);
 

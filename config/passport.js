@@ -48,6 +48,7 @@ module.exports = function(passport){
                     newUser.name = username;
                     newUser.local.email = email;
                     newUser.local.password = newUser.generateHash(password);
+                    newUser.provider = "local"
                     newUser.save(function(err) {
                         if(err) throw err;
                         return done(null, newUser);
@@ -105,6 +106,7 @@ module.exports = function(passport){
                     
                     newUser.facebook.id = profile.id;
                     newUser.facebook.token = token;
+                    newUser.provider = "facebook"
                     newUser.name = profile.displayName
                     newUser.facebook.email = profile.emails[0].value
 
@@ -144,6 +146,7 @@ module.exports = function(passport){
 
                     newUser.google.id = profile.id;
                     newUser.google.token = token;
+                    newUser.provider = "google"
                     newUser.name = profile.displayName;
                     newUser.profile_picture = profile.photos[0].value
                     newUser.google.email = profile.emails[0].value
