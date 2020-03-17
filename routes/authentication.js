@@ -67,7 +67,7 @@ module.exports = function(app, passport){
     app.delete('/auth/facebook', passport.authenticate('jwt'), function(req, res){
         let user = req.user;
         
-        if(!user.removeProvider("facebook")) { return res.status(400).json({statusCode: 400, message: "Can not remove provider"}); }
+        if(!user.removeProvider("facebook")) { return res.status(400).json({statusCode: 400, message: "Cannot remove provider"}); }
 
         user.save(function(err) {
             if(err) throw err;
@@ -196,36 +196,6 @@ module.exports = function(app, passport){
     });    
 */
 
-    /////////////////////////////////////////////
-    //UNLINK: FACEBOOK//////////////////////////
-    ///////////////////////////////////////////
-
-    app.get('/unlink/facebook', function(req, res) {
-
-    });
-
-    app.all('/unlink/facebook', function(req, res){
-        res.status(405).json({ statusCode : 405, message: "Method Not Allowed", Allow : "GET" });
-    });
-
-    /////////////////////////////////////////////
-    //UNLINK: GOOGLE////////////////////////////
-    ///////////////////////////////////////////
-
-    app.get('/unlink/google', function(req, res) {
-        let user = req.user;
-        user.google.token = undefined;
-        user.google.provider = undefined;
-        user.save(function(err) {
-            if(err) throw err;
-            res.status(200).json({statusCode: 200, message: "OK"});
-        });
-    });
-
-    app.all('/unlink/google', function(req, res){
-        res.status(405).json({ statusCode : 405, message: "Method Not Allowed", Allow : "GET" });
-    });
-
     function generateTokenResponse(req){
         let payload = { id: req.user._id }
         let token = jwt.sign(payload, secret);
@@ -234,43 +204,4 @@ module.exports = function(app, passport){
     }   
 }
 
-
-
-    /*The password needs to contain the following:
-        - minimal 8 characters
-        - atleast 1 number
-        - atleast 1 letter
-        - atleast 1 unique character !#$%?
-    */
-
-/*router.post('/sign-up', function(req, res){
-    if(!req.query.name) return res.send(`You didn't enter a valid name!`);
-    else if(!req.query.email) return res.send(`You didn't enter a valid email!`);
-    else if(!req.query.password) return res.send(`You didn't give a valid password!`);
-    
-    const passwordRegex = new RegExp('^.*(?=.{8,})(?=.*[a-zA-Z])(?=.*\\d)(?=.*[!#$%&? "]).*$');
-     
-    if(!passwordRegex.test(req.query.password)) return res.send(passwordRegex +'The password needs to be atleast 8 characters long and have atleast one number and one special character.');
-
-
-    const newUser = new User({
-        name: req.query.name,
-        local: {
-            email: req.query.email,
-            password: User.generateHash(req.query.password);
-        }
-    });
-
-    newUser.save().then(response => {
-        res.status(201).json({
-            message: "User successfully created!",
-            result: response
-        });
-    }).catch(err => { 
-        res.status(500).json({
-            error: err
-        });
-    });
-
-});*/
 

@@ -2,7 +2,6 @@ const mongoose = require('mongoose');
 const schema = mongoose.Schema;
 const bcrypt = require('bcryptjs');
 
-
 const emailRegex = new RegExp('^(([^<>()\\[\\]\\.,;:\\s@"]+(\\.[^<>()\[\]\\.,;:\\s@"]+)*)|(".+"))@((\\[[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}])|(([a-zA-Z\\-0-9]+\\.)+[a-zA-Z]{2,}))$');
 const passwordRegex = new RegExp('^.*(?=.{8,})(?=.*[a-zA-Z])(?=.*\\d)(?=.*[!#$%&? "]).*$');
 
@@ -20,6 +19,7 @@ const userSchema = new schema({
         } 
     },
     password: String,
+    role: { type: String, default: "user" },
     providers: [{
         id: String,
         provider: String,
@@ -45,7 +45,7 @@ userSchema.methods.hasProvider = function(providerName){
 }
 
 userSchema.methods.removeProvider = function(providerName){
-    if(this.providers.length < 2) return false;
+    if(this.providers.length < 2 && this.password == null) return false;
     
     let filteredProviders = this.providers.filter(p => {
         return p.provider !== providerName 

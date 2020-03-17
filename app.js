@@ -1,6 +1,8 @@
 const express       = require('express');
 const mongoose      = require('mongoose');
+
 const passport      = require('passport');
+const connectRoles  = require('connect-roles');
 
 const port          = process.env.port || 3000
 
@@ -50,8 +52,20 @@ app.use(passport.session());
 
 require('./config/passport')(passport);
 
+//Connect-Roles
+
+const user = new connectRoles({
+    failureHandler: function(req, res, action){
+        res.status(403).json({statusCode: 403, message: 'Access Denied - You don\'t have permission to: ' + action});
+    }
+});
+
+app.use(user.middleware());
+
+require('./config/roles')(user);
+
 //Routes
-require('./routes/routes')(app, passport);
+require('./routes/routes')(app, passport, user);
 
 app.use(function (err, req, res, next) {
     console.error(err.message);
