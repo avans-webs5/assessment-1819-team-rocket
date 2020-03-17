@@ -13,7 +13,8 @@ router.get('/', function(req, res) {
                         let validUser = {
                                 id: user._id,
                                 name: user.name,
-                                email: user.local.email || user.google.email || user.facebook.email,
+                                email: user.email,
+                                providers: user.providers ,
                                 created: user.created
                         }
                         validatedUsers.push(validUser);

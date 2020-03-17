@@ -21,7 +21,7 @@ module.exports = function(app, passport){
         let user = { 
             id: req.user._id,
             name: req.user.name,
-            email: req.user.local.email,
+            email: req.user.email,
             token: token,
             created: req.user.created
         };
@@ -42,7 +42,7 @@ module.exports = function(app, passport){
         let user = { 
             id: req.user._id,
             name: req.user.name,
-            email: req.user.local.email,
+            email: req.user.email,
             token: token,
             created: req.user.created
         };
@@ -63,8 +63,20 @@ module.exports = function(app, passport){
         scope: ['email', 'public_profile']
     }));
 
+
+    app.delete('/auth/facebook', passport.authenticate('jwt'), function(req, res){
+        let user = req.user;
+        
+        if(!user.removeProvider("facebook")) { return res.status(400).json({statusCode: 400, message: "Can not remove provider"}); }
+
+        user.save(function(err) {
+            if(err) throw err;
+            res.status(200).json({statusCode: 200, message: "OK"});
+        });
+    });
+
     app.all('/auth/facebook', function(req, res){
-        res.status(405).json({ statusCode : 405, message: "Method Not Allowed", Allow : "GET" });
+        res.status(405).json({ statusCode : 405, message: "Method Not Allowed", Allow : "GET, DELETE" });
     });
 
     app.get('/auth/facebook/callback', passport.authenticate('facebook'), function (req, res) {
@@ -72,9 +84,9 @@ module.exports = function(app, passport){
         let user = { 
             id: req.user._id,
             name: req.user.name,
-            email: req.user.facebook.email,
+            email: req.user.email,
             token: token,
-            provider_token: { provider: "facebook", token: req.user.facebook.token },
+            provider_tokens: req.user.providers,
             created: req.user.created
         };
 
@@ -94,6 +106,17 @@ module.exports = function(app, passport){
         scope: ['email', 'profile']
     }));
 
+    app.delete('/auth/google', passport.authenticate('jwt'), function(req, res){
+        let user = req.user;
+        
+        if(!user.removeProvider("google")) { return res.status(400).json({statusCode: 400, message: "Can not remove provider"}); }
+        
+        user.save(function(err) {
+            if(err) throw err;
+            res.status(200).json({statusCode: 200, message: "OK"});
+        });
+    });
+
     app.all('/auth/google', function(req, res){
         res.status(405).json({ statusCode : 405, message: "Method Not Allowed", Allow : "GET" });
     });
@@ -103,9 +126,9 @@ module.exports = function(app, passport){
         let user = { 
             id: req.user._id,
             name: req.user.name,
-            email: req.user.google.email,
+            email: req.user.email,
             token: token,
-            provider_token: { provider: "google", token: req.user.google.token },
+            provider_tokens: req.user.providers,
             created: req.user.created
         };
 
@@ -129,7 +152,7 @@ module.exports = function(app, passport){
         res.status(405).json({ statusCode : 405, message: "Method Not Allowed", Allow : "GET" });
     });
 
-
+/*
     /////////////////////////////////////////////
     //CONNECT: LOCAL////////////////////////////
     ///////////////////////////////////////////
@@ -148,6 +171,11 @@ module.exports = function(app, passport){
 
     app.get('/connect/facebook', passport.authorize('facebook', { scope : ['public_profile', 'email'] }));
 
+
+    app.all('/connect/facebook', function(req, res){
+        res.status(405).json({ statusCode : 405, message: "Method Not Allowed", Allow : "GET" });
+    });
+
     app.get('/connect/facebook/callback',passport.authorize('facebook', {failureRedirect : '/'}), function(req, res){
         res.status(200).json({statusCode: 200, message: "OK"});
     });
@@ -159,11 +187,44 @@ module.exports = function(app, passport){
 
     app.get('/connect/google', passport.authorize('google', { scope : ['profile', 'email'] }));
 
-    // the callback after google has authorized the user
+    app.all('/connect/google', function(req, res){
+        res.status(405).json({ statusCode : 405, message: "Method Not Allowed", Allow : "GET" });
+    });
+
     app.get('/connect/google/callback', passport.authorize('google', { failureRedirect : '/' }), function(req, res){
         res.status(200).json({statusCode: 200, message: "OK"});
     });    
+*/
 
+    /////////////////////////////////////////////
+    //UNLINK: FACEBOOK//////////////////////////
+    ///////////////////////////////////////////
+
+    app.get('/unlink/facebook', function(req, res) {
+
+    });
+
+    app.all('/unlink/facebook', function(req, res){
+        res.status(405).json({ statusCode : 405, message: "Method Not Allowed", Allow : "GET" });
+    });
+
+    /////////////////////////////////////////////
+    //UNLINK: GOOGLE////////////////////////////
+    ///////////////////////////////////////////
+
+    app.get('/unlink/google', function(req, res) {
+        let user = req.user;
+        user.google.token = undefined;
+        user.google.provider = undefined;
+        user.save(function(err) {
+            if(err) throw err;
+            res.status(200).json({statusCode: 200, message: "OK"});
+        });
+    });
+
+    app.all('/unlink/google', function(req, res){
+        res.status(405).json({ statusCode : 405, message: "Method Not Allowed", Allow : "GET" });
+    });
 
     function generateTokenResponse(req){
         let payload = { id: req.user._id }

@@ -32,7 +32,7 @@ module.exports = function(passport){
     },
     function(req, email, password, done){
         process.nextTick(function() {
-            User.findOne({ 'local.email': email }, function(err, user){
+            User.findOne({ 'email': email }, function(err, user){
                 if(err) return done(err);
                 
                 if(user){
@@ -46,9 +46,8 @@ module.exports = function(passport){
                     }
 
                     newUser.name = username;
-                    newUser.local.email = email;
-                    newUser.local.password = newUser.generateHash(password);
-                    newUser.provider = "local"
+                    newUser.email = email;
+                    newUser.password = newUser.generateHash(password);
                     newUser.save(function(err) {
                         if(err) throw err;
                         return done(null, newUser);
@@ -65,7 +64,7 @@ module.exports = function(passport){
     },
     function(req, email, password, done){
         process.nextTick(function() {
-            User.findOne({'local.email': email}, function(err, user){
+            User.findOne({'email': email}, function(err, user){
                 if(err) { 
                     console.log(err);
                     done(err); 
@@ -94,22 +93,48 @@ module.exports = function(passport){
     function(req, token, refreshToken, profile, done){
         process.nextTick(function(){
             if(!req.user){
-                User.findOne({ 'facebook.id' : profile.id}, function(err, user){
+                User.findOne({ 'email' : profile.emails[0].value}, function(err, user){
                     if(err){
                         console.log(err);
                         return done(err);
                     }
                         
                     if(user){
+
+                        //RELINK ACCOUNT
+                        if (!user.hasProvider("facebook")) {
+
+                            let provider = {
+                                id:  profile.id,
+                                token: token,
+                                provider: "facebook",
+                            };
+
+                            user.providers.push(provider);
+
+                            user.save(function(err) {
+                                if (err)
+                                    throw err;
+                                return done(null, user);
+                            });
+                        }
+
                         return done(null, user);
                     } else {
+
+                        //CREATE NEW ACCOUNT
                         let newUser = new User();
-                        
-                        newUser.facebook.id = profile.id;
-                        newUser.facebook.token = token;
-                        newUser.name = profile.displayName
-                        newUser.facebook.email = profile.emails[0].value
+                        newUser.name = profile.displayName;
+                        newUser.email = profile.emails[0].value;
     
+                        let provider = {
+                            id: profile.id,
+                            token: token,
+                            provider: "facebook",
+                        }
+
+                        newUser.providers.push(provider);
+
                         newUser.save(function(err){
                             if(err)
                                 throw err;
@@ -119,11 +144,15 @@ module.exports = function(passport){
                     }
                 });
             } else {
+
+                let provider = {
+                    id: profile.id,
+                    token: token,
+                    provider: "facebook",
+                };
+                //LINK TO EXISTING ACCOUNT
                 let user = req.user;
-                user.facebook.id = profile.id;
-                user.facebook.token = token;
-                user.name = profile.displayName
-                user.facebook.email = profile.emails[0].value
+                user.providers.push(provider);
 
                 user.save(function(err){
                     if(err)
@@ -143,41 +172,84 @@ module.exports = function(passport){
         clientID: configAuth.googleAuth.clientID,
         clientSecret: configAuth.googleAuth.clientSecret,
         callbackURL: configAuth.googleAuth.callbackURL,
+        passReqToCallback: true
     },
-    function(token, refreshToken, profile, done){
-        process.nextTick(function(){
-            User.findOne({'google.id': profile.id}, function(err, user){
-                if(err){
-                    console.log(err);
-                    return done(err);
-                }
+    function(req, token, refreshToken, profile, done){
 
-                if(user) {
-                    return done(null, user);
+        if(!req.user){
+            process.nextTick(function(){
+                User.findOne({'email': profile.emails[0].value}, function(err, user){
+                    if(err){
+                        console.log(err);
+                        return done(err);
+                    }
 
-                } else {
-                    let newUser = new User();
+                    if(user) {
 
-                    newUser.google.id = profile.id;
-                    newUser.google.token = token;
-                    newUser.name = profile.displayName;
-                    newUser.profile_picture = profile.photos[0].value
-                    newUser.google.email = profile.emails[0].value
+                        if (!user.hasProvider("google")) {
 
-                    newUser.save(function(err){
-                        if(err) throw err;
-                        return done(null, newUser);
-                    });
-                }   
+                            let provider = {
+                                id:  profile.id,
+                                token: token,
+                                provider: "google",
+                            };
+
+                            user.providers.push(provider);
+
+                            user.save(function(err) {
+                                if (err)
+                                    throw err;
+                                return done(null, user);
+                            });
+                        }
+
+                        return done(null, user);
+
+                    } else {
+                        let newUser = new User();
+
+                        newUser.name = profile.displayName;
+                        newUser.profile_picture = profile.photos[0].value;
+                        newUser.email = profile.emails[0].value;
+
+                        let provider = {
+                            id:  profile.id,
+                            token: token,
+                            provider: "google",
+                        };
+
+                        newUser.providers.push(provider);
+
+                        newUser.save(function(err){
+                            if(err) throw err;
+                            return done(null, newUser);
+                        });
+                    }   
+                });
             });
-        });
+        } else {
+            let user = req.user;
+            let provider = {
+                id:  profile.id,
+                token: token,
+                provider: "google",
+            };
+
+            user.providers.push(provider);
+
+            user.save(function(err){
+                if(err)
+                    throw err;
+
+                return done(null, user);
+            });
+        }
     }));
 
     // =========================================================================
     // JWT======================================================================
     // =========================================================================
 
-    //TODO: Maak secret globaal zodat als je hem veranderd het mee veranderd als het ge-encrypt wordt
     passport.use(new jwtStrategy({
         jwtFromRequest: extractJWT.fromAuthHeaderAsBearerToken(),
         secretOrKey: configAuth.JWS.secret
