@@ -73,6 +73,7 @@ module.exports = function(passport){
                 if(!user)
                     return done(null, false,  req.flash('error', '{ "statusCode" : 400, "message" : "User not found!"}'));
                 
+                if(!password) return done(null, false, req.flash('error', '{ "statusCode" : 400, "message" : "No local account stored!"}'));
                 if(!user.validHashedPassword(password)) return done(null, false, req.flash('error', '{ "statusCode" : 400, "message" : "Password is incorrect!"}'));
                 return done(null, user);
             });
@@ -228,19 +229,20 @@ module.exports = function(passport){
                 });
             });
         } else {
-            if(req.user.hasProvider("google"))
-            {
-                req.user.removeProvider("google");
-            }
 
             let user = req.user;
-            let provider = {
-                id:  profile.id,
-                token: token,
-                provider: "google",
-            };
-
-            user.providers.push(provider);
+            let provider = user.getProvider("google");  
+                    
+            if(provider == undefined) {
+                provider = {
+                    id:  profile.id,
+                    token: token,
+                    provider: "google",
+                };
+                user.providers.push(provider);
+            } else {
+                provider.token = token
+            }
 
             user.save(function(err){
                 if(err)

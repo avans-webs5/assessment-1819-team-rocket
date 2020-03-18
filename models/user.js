@@ -44,6 +44,16 @@ userSchema.methods.hasProvider = function(providerName){
     return false;
 }
 
+userSchema.methods.getProvider = function(providerName){
+    if(this.providers.length < 1) return this;
+
+    const provider = this.providers.find(p => {
+        return p.provider === providerName 
+    });
+
+    return provider;
+}
+
 userSchema.methods.removeProvider = function(providerName){
     if(this.providers.length < 2 && this.password == null) return false;
     
