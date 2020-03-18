@@ -36,13 +36,15 @@ mongoose.connect(database.connection, {useNewUrlParser: true, useUnifiedTopology
 
 
 app.use(morgan('dev'));
-app.use(flash());
+
 
 app.use(cookieParser(secret));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({
     extended: true
 }));
+
+app.use(flash());
 
 //Password js
 
@@ -68,9 +70,13 @@ require('./config/roles')(user);
 require('./routes/routes')(app, passport, user);
 
 app.use(function (err, req, res, next) {
-    console.error(err.message);
-    if (!err.statusCode) err.statusCode = 500;
-    res.status(err.statusCode).send(err.message);
+    try{
+        let error = JSON.parse(err.message);
+        res.status(error.statusCode).send(error);
+    }catch(err){
+        if (!err.statusCode) err.statusCode = 500;
+        res.status(err.statusCode).send(err.message);
+    }
 });
 
 app.listen(port);

@@ -3,20 +3,16 @@ const secret    = require('../config/auth').JWS.secret
 
 module.exports = function(app, passport){
 
-    app.all('/', function(req, res){
-        let error = req.flash('error');
-        if(error == '') {
-            return res.status(401).json({ statusCode : 401, message : "Unauthorized access!" });
-        }
-        res.status(400).json(JSON.parse(error));
-    });
 
+    app.all('/', function(req, res){
+        res.status(405).json({ statusCode : 401, message: "Unauthorized" });
+    });
 
     /////////////////////////////////////////////
     //LOGIN/////////////////////////////////////
     ///////////////////////////////////////////
 
-    app.post('/login', passport.authenticate('local-login', { failureRedirect : '/', failureFlash: true }), function(req, res){
+    app.post('/login', passport.authenticate('local-login'), function(req, res){
         let token = generateTokenResponse(req);
         let user = { 
             id: req.user._id,
@@ -37,7 +33,7 @@ module.exports = function(app, passport){
     //SIGNUP////////////////////////////////////
     ///////////////////////////////////////////
 
-    app.post('/signup', passport.authenticate('local-signup',  { failureRedirect : '/', failureFlash: true }), function(req, res){
+    app.post('/signup', passport.authenticate('local-signup'), function(req, res){
         let token = generateTokenResponse(req);
         let user = { 
             id: req.user._id,
@@ -151,50 +147,6 @@ module.exports = function(app, passport){
     app.all('/logout', function(req, res){
         res.status(405).json({ statusCode : 405, message: "Method Not Allowed", Allow : "GET" });
     });
-
-/*
-    /////////////////////////////////////////////
-    //CONNECT: LOCAL////////////////////////////
-    ///////////////////////////////////////////
-
-    app.post('/connect/local', passport.authenticate('local-signup', { failureRedirect : '/', failureFlash : true }), function(req, res){
-        res.status(200).json({statusCode: 200, message: "OK"});
-    });
-
-    app.all('/connect/local', function(req, res){
-        res.status(405).json({ statusCode : 405, message: "Method Not Allowed", Allow : "POST" });
-    });
-
-    /////////////////////////////////////////////
-    //CONNECT: FACEBOOK/////////////////////////
-    ///////////////////////////////////////////
-
-    app.get('/connect/facebook', passport.authorize('facebook', { scope : ['public_profile', 'email'] }));
-
-
-    app.all('/connect/facebook', function(req, res){
-        res.status(405).json({ statusCode : 405, message: "Method Not Allowed", Allow : "GET" });
-    });
-
-    app.get('/connect/facebook/callback',passport.authorize('facebook', {failureRedirect : '/'}), function(req, res){
-        res.status(200).json({statusCode: 200, message: "OK"});
-    });
-
-
-    /////////////////////////////////////////////
-    //CONNECT: GOOGLE///////////////////////////
-    ///////////////////////////////////////////
-
-    app.get('/connect/google', passport.authorize('google', { scope : ['profile', 'email'] }));
-
-    app.all('/connect/google', function(req, res){
-        res.status(405).json({ statusCode : 405, message: "Method Not Allowed", Allow : "GET" });
-    });
-
-    app.get('/connect/google/callback', passport.authorize('google', { failureRedirect : '/' }), function(req, res){
-        res.status(200).json({statusCode: 200, message: "OK"});
-    });    
-*/
 
     function generateTokenResponse(req){
         let payload = { id: req.user._id }

@@ -33,16 +33,19 @@ module.exports = function(passport){
     function(req, email, password, done){
         process.nextTick(function() {
             User.findOne({ 'email': email }, function(err, user){
-                if(err) return done(err);
+                if(err) { 
+                    console.log(err);
+                    return done(err); 
+                }
                 
                 if(user){
-                    return done(null, false, req.flash('error', '{ "statusCode" : 400, "message" : "That email is already taken." }'));
+                    return done(new Error('{ "statusCode" : 400, "message" : "That email is already taken." }'), false);
                 } else {
                     let username = email.slice(0, email.lastIndexOf("@"));
                     let newUser = new User();
    
                     if(!newUser.validPassword(password)) {
-                        return done(null, false, req.flash('error', ' { "statusCode" : 400, "message" : "The password needs to contain minimal 8 characters, atleast 1 number, atleast 1 letter and atleast 1 unique character !#$%?" }'));
+                        return done(new Error( '{ "statusCode" : 400, "message" : "The password needs to contain minimal 8 characters, atleast 1 number, atleast 1 letter and atleast 1 unique character !#$%?" }' ), false);
                     }
 
                     newUser.name = username;
@@ -71,10 +74,10 @@ module.exports = function(passport){
                 }
     
                 if(!user)
-                    return done(null, false,  req.flash('error', '{ "statusCode" : 400, "message" : "User not found!"}'));
+                    return done(new Error('{ "statusCode" : 400, "message" : "User not found!"}'), false);
                 
-                if(!password) return done(null, false, req.flash('error', '{ "statusCode" : 400, "message" : "No local account stored!"}'));
-                if(!user.validHashedPassword(password)) return done(null, false, req.flash('error', '{ "statusCode" : 400, "message" : "Password is incorrect!"}'));
+                if(!password) return done(new Error('{ "statusCode" : 400, "message" : "No local account stored!"}'), false);
+                if(!user.validHashedPassword(password)) return done(new Error('{ "statusCode" : 400, "message" : "Password is incorrect!"}'), false);
                 return done(null, user);
             });
         });
