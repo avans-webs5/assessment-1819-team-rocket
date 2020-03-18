@@ -25,7 +25,7 @@ router.get('/', function(req, res) {
 });
 
 router.all('/', function(req, res){
-
+        res.status(405).json({ statusCode : 405, message: "Method Not Allowed", Allow : "GET" });
 });
 
 module.exports = router;
