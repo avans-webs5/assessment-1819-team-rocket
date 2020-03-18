@@ -228,6 +228,11 @@ module.exports = function(passport){
                 });
             });
         } else {
+            if(req.user.hasProvider("google"))
+            {
+                req.user.removeProvider("google");
+            }
+
             let user = req.user;
             let provider = {
                 id:  profile.id,

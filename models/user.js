@@ -38,7 +38,7 @@ userSchema.methods.hasProvider = function(providerName){
 
     if(this.providers.length < 1) return true
 
-    this.providers.array.forEach(p => {
+    this.providers.forEach(p => {
         if(p.provider === providerName) return true;
     });
     return false;
