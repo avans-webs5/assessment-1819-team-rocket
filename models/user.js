@@ -38,9 +38,10 @@ userSchema.methods.hasProvider = function(providerName){
 
     if(this.providers.length < 1) return true
 
-    this.providers.forEach(p => {
-        if(p.provider === providerName) return true;
-    });
+    for (let i = 0; i < this.providers.length; i++) {
+        if(this.providers[i].provider == providerName){ return true; }  
+    }
+
     return false;
 }
 

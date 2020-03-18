@@ -188,7 +188,6 @@ module.exports = function(passport){
                     if(user) {
 
                         if (!user.hasProvider("google")) {
-
                             let provider = {
                                 id:  profile.id,
                                 token: token,
