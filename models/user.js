@@ -30,6 +30,38 @@ const userSchema = new schema({
 userSchema.set('toObject', { getters: true });
 userSchema.set('toJSON', { getters: true });
 
+userSchema.query.byName = function(sortType){
+    if(sortType){
+        if(sortType != 1 && sortType != -1) { 
+            sortType = 1; 
+        }
+
+        return this.find().sort({name: sortType});
+    }
+    return this.find();
+}
+
+userSchema.query.byEmail = function(sortType){
+    if(sortType){
+        if(sortType != 1 && sortType != -1) { 
+            sortType = 1; 
+        }
+        return this.find().sort({email: sortType});
+    }
+    return this.find();
+}
+
+userSchema.query.byRole = function(sortType){
+    if(sortType){
+        if(sortType != 1 && sortType != -1) { 
+            sortType = 1; 
+        }
+        return this.find().sort({role: sortType});
+    }
+
+    return this.find();
+}
+
 userSchema.methods.generateHash = function(password){
     return bcrypt.hashSync(password, bcrypt.genSaltSync(10), null);
 }
