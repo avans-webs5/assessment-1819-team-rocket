@@ -30,35 +30,25 @@ const userSchema = new schema({
 userSchema.set('toObject', { getters: true });
 userSchema.set('toJSON', { getters: true });
 
-userSchema.query.byName = function(sortType){
-    if(sortType){
-        if(sortType != 1 && sortType != -1) { 
-            sortType = 1; 
-        }
-
-        return this.find().sort({name: sortType});
+userSchema.query.byName = function(name){
+    console.log(name);
+    if(name){
+        return this.find({'name': name}).collation({locale: "en", strength: 1});
     }
     return this.find();
 }
 
-userSchema.query.byEmail = function(sortType){
-    if(sortType){
-        if(sortType != 1 && sortType != -1) { 
-            sortType = 1; 
-        }
-        return this.find().sort({email: sortType});
+userSchema.query.byEmail = function(email){
+    if(email){
+        return this.findOne({'email': email}).collation({locale: "en", strength: 1});
     }
     return this.find();
 }
 
-userSchema.query.byRole = function(sortType){
-    if(sortType){
-        if(sortType != 1 && sortType != -1) { 
-            sortType = 1; 
-        }
-        return this.find().sort({role: sortType});
+userSchema.query.byRole = function(role){
+    if(role){
+        return this.find({'role': role}).collation({locale: "en", strength: 1});
     }
-
     return this.find();
 }
 
