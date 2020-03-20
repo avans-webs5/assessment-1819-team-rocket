@@ -31,15 +31,18 @@ roomSchema.set('toJSON', { getters: true });
 roomSchema.virtual('users').get(function() {
     let users = [];
 
-    this.messages.array.forEach(message => {
-        users.push(message);
-    });
+    if(this.messages.array !== undefined)
+    {
+        this.messages.array.forEach(message => {
+            users.push(message);
+        });
+    }
+    
 
     return users;
 });
 
 roomSchema.query.byName = function(name){
-    console.log(name);
     if(name){
         return this.find({'name': name}).collation({locale: "en", strength: 1});
     }
