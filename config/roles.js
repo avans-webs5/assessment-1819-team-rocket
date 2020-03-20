@@ -7,4 +7,8 @@ module.exports = function(user) {
     user.use('access userinfo page', function (req) {
           return req.user.role === 'admin';
     });
+
+    user.use('access roomsinfo page', function(req){
+        return req.user.role === 'user';
+    })
 }
