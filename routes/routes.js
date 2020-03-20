@@ -2,7 +2,7 @@ module.exports = function(app, passport, user) {
     
     require('./authentication', user.can('access login page'))(app,passport);
     app.use('/users', passport.authenticate('jwt', {session: false}), user.can('access userinfo page'), require('./users'));
-    app.use('/rooms', passport.authenticate('jwt', {session: false}), user.can('access roomsinfo page'), require('./rooms'));
+    app.use('/rooms', /*passport.authenticate('jwt', {session: false}), user.can('access roomsinfo page'),*/ require('./rooms'));
 
 
     /*function isLoggedIn(req, res, next) {

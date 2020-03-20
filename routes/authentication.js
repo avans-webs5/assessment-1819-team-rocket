@@ -3,12 +3,14 @@ const secret    = require('../config/auth').JWS.secret
 
 module.exports = function(app, passport){
 
+    //Global login-in checker to see if the users jwt token is legit
+
     app.get('/', passport.authenticate('jwt'), function(req, res){
         res.status(200).json({ statusCode : 200, message: "OK" });
     });
 
     app.all('/', function(req, res){
-        res.status(405).json({ statusCode : 401, message: "Unauthorized" });
+        res.status(405).json({ statusCode : 405, message: "Method Not Allowed", Allow : "GET" });
     });
 
     /////////////////////////////////////////////
