@@ -27,7 +27,7 @@ if(process.env.NODE_ENV === "development")
 }
 
 //Data acces layer
-mongoose.connect(database.connection, {useNewUrlParser: true, useUnifiedTopology: true})
+mongoose.connect(database.connection, {useNewUrlParser: true, useUnifiedTopology: true, useFindAndModify: true})
 .then(() => {
     console.log('Database connected!');
 }).catch(err => {

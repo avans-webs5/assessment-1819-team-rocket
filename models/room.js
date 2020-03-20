@@ -1,8 +1,11 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
+mongoose.set('useCreateIndex', true)
+
+//TODO: fix unique naming issue
 const roomSchema = new Schema({
-    name:           { type: String, required: true },
+    name:           { type: String, unique: true, required: true },
     password:       String,
     picture:        String,
     blacklist:      { enabled: Boolean, users: [{ userId: String }] },
@@ -25,6 +28,22 @@ const roomSchema = new Schema({
 roomSchema.set('toObject', { getters: true });
 roomSchema.set('toJSON', { getters: true });
 
+roomSchema.virtual('users').get(function() {
+    let users = [];
 
+    this.messages.array.forEach(message => {
+        users.push(message);
+    });
+
+    return users;
+});
+
+roomSchema.query.byName = function(name){
+    console.log(name);
+    if(name){
+        return this.find({'name': name}).collation({locale: "en", strength: 1});
+    }
+    return this.find();
+}
 
 module.exports = mongoose.model('Room', roomSchema);

@@ -7,9 +7,9 @@ const User = require('../models/user');
 router.get('/', function(req, res) {
 
         let result = User.find({})
-        .byName(req.query.byName)
-        .byEmail(req.query.byEmail)
-        .byRole(req.query.byRole)
+        .byName(req.query.name)
+        .byEmail(req.query.email)
+        .byRole(req.query.role)
 
         result.then(users => {
                 let validatedUsers = [];
