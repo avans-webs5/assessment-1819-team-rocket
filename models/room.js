@@ -9,7 +9,7 @@ const roomSchema = new Schema({
     password:       String,
     picture:        String,
     blacklist:      { enabled: Boolean, users: [{ type: Schema.Types.ObjectId, ref: 'User'}] },
-    filters:        [{ type: String }],
+    categories:     [{ type: String, default: 'public' }],
     users:          [{ type: Schema.Types.ObjectId, ref: 'User' }],
     messages: [{
         user:       { type: Schema.Types.ObjectId, ref: 'User'},
@@ -49,6 +49,21 @@ roomSchema.virtual('messageUsers', {
         return users;
     }
 });
+
+roomSchema.methods.getMessagesByName = function(name){
+    if(name){
+
+        let messages = [];
+        for (let i = 0; i < this.messages.length; i++) {
+            if(this.messages[i].user.name.toLowerCase() == name.toLowerCase()) {
+                messages.push(this.messages[i]);
+            }
+        }
+        return messages;
+    }
+    return this.messages;
+}
+
 
 roomSchema.methods.getMessageById = function(id){
     if(id){
@@ -98,6 +113,13 @@ roomSchema.methods.containsUser = function(id){
 roomSchema.query.byName = function(name){
     if(name){
         return this.find({'name': name}).collation({locale: "en", strength: 1});
+    }
+    return this.find();
+}
+
+roomSchema.query.byCategories = function(category){
+    if(category){
+        return this.find({'categories': category}).collation({locale: "en", strength: 1});
     }
     return this.find();
 }
