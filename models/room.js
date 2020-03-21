@@ -5,6 +5,7 @@ mongoose.set('useCreateIndex', true);
 
 //TODO: fix unique naming issue
 const roomSchema = new Schema({
+    id:             { type: String, unique: true, required: true },
     name:           { type: String, unique: true, required: true },
     password:       String,
     picture:        String,

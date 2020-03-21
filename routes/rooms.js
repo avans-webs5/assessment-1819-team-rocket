@@ -18,23 +18,36 @@ router.get('/', function(req, res){
 });
 
 router.post('/', function(req, res){
-    let newRoom = {
-        name: req.body.name,
-        password: req.body.password || '',
-        picture: req.body.picture || '',
-        blacklist: { enabled: req.body.blacklistEnabled || false, users: req.body.blacklistUsers || [] },
-        messages: [],
-        videos: [],
-    }
+    const roomId = req.body.name.replace(' ', '_');
+    let result = Room.findOne({id: roomId});
 
-    Room.create(newRoom, function(err, room){
-        if(err){
-            console.error(err);
-            return res.status(400).json({ statusCode : 400, message: "Bad Request" })  
+    result.then(room => {
+        console.log(room);
+        if(!room){
+
+            let newRoom = {
+                id: roomId.toLowerCase(),
+                name: req.body.name,
+                password: req.body.password || '',
+                picture: req.body.picture || '',
+                blacklist: { enabled: req.body.blacklistEnabled || false, users: req.body.blacklistUsers || [] },
+                messages: [],
+                videos: [],
+            }
+    
+            Room.create(newRoom, function(err, room){
+                if(err){
+                    console.error(err);
+                    return res.status(500).json({ statusCode : 500, message: "Internal Server Error" })  
+                }
+    
+                res.status(201).json({room, statusCode : 201, message: "Created" });
+            });
+        } else {
+            res.status(400).json({statusCode : 400, message: "Roomname already in use" })
         }
-
-        res.status(201).json({room, statusCode : 201, message: "Created" })
     });
+
 });
 
 router.all('/', function(req, res){
@@ -46,7 +59,7 @@ router.all('/', function(req, res){
 ///////////////////////////
 
 router.get('/:id', function(req, res){
-    let result = Room.findById(req.params.id).populate('users');
+    let result = Room.find({id: req.params.id}).populate('users');
     result.then(room => {
 
         return res.status(200).json({ room, statusCode : 200, message: "OK" });
@@ -59,7 +72,7 @@ router.get('/:id', function(req, res){
 });
 
 router.put('/:id', function(req, res){
-    Room.findByIdAndUpdate(req.params.id, req,body, function(err, room){
+    Room.findOneAndUpdate({id: req.params.id}, req,body, function(err, room){
         if(err) {
             console.error(err);
             return res.status(400).json({ statusCode : 400, message: "Bad Request" });
@@ -70,7 +83,7 @@ router.put('/:id', function(req, res){
 });
 
 router.delete('/:id', function(req, res){
-    Room.findByIdAndDelete(req.params.id, req,body, function(err, room){
+    Room.findOneAndDelete({id: req.params.id}, req,body, function(err, room){
         if(err) {
             console.error(err);
             return res.status(400).json({ statusCode : 400, message: "Bad Request" });
@@ -89,7 +102,7 @@ router.all('/:id', function(req, res){
 ///////////////////////////
 
 router.get('/:id/users', function(req, res){
-    Room.findById(req.params.id, function(err, room){
+    Room.findOne({id: req.params.id}, function(err, room){
         if(err) {
             console.error(err);
             return res.status(400).json({ statusCode : 400, message: "Bad Request" });
@@ -99,7 +112,7 @@ router.get('/:id/users', function(req, res){
 });
 
 router.post('/:id/users', function(req, res){
-    let result = Room.findById(req.params.id).populate('users');
+    let result = Room.findOne({id: req.params.id}).populate('users');
 
     result.then(room => {
         if(!room.containsUser(req.body.userId)) {
@@ -117,7 +130,7 @@ router.post('/:id/users', function(req, res){
 });
 
 router.delete('/:id/users', function(req, res){
-    let result = Room.findById(req.params.id);
+    let result = Room.findOne({id: req.params.id});
 
     result.then(room => {
         
@@ -171,7 +184,7 @@ router.all('/:id/users/:userId', function(req, res){
 
 
 router.get('/:id/messages', function(req, res){
-    let result = Room.findById(req.params.id)
+    let result = Room.find({id: req.params.id})
     .populate('messages.user', 'name');
 
     result.then(room => {
@@ -185,7 +198,7 @@ router.get('/:id/messages', function(req, res){
 });
 
 router.post('/:id/messages', function(req, res){
-    Room.findById(req.params.id, function(err, room){
+    Room.find({id: req.params.id}, function(err, room){
         if(err) {
             console.error(err);
             return res.status(500).json({ statusCode : 500, message: "Internal Server Error" });
@@ -220,7 +233,7 @@ router.all('/:id/messages', function(req, res){
 ///////////////////////////
 
 router.get('/:id/messages/:messageId', function(req, res){
-    Room.findOne({'_id': req.params.id, 'messages._id': req.params.messageId }, function(err, room){
+    Room.findOne({'id': req.params.id, 'messages._id': req.params.messageId }, function(err, room){
         if(err){
             console.error(err);
             return res.status(500).json({ statusCode : 500, message: "Internal Server Error" });
@@ -233,7 +246,7 @@ router.get('/:id/messages/:messageId', function(req, res){
 
 
 router.put('/:id/messages/:messageId', function(req, res){
-    Room.findOne({'_id': req.params.id, 'messages._id': req.params.messageId}, function(err, room){
+    Room.findOne({'id': req.params.id, 'messages._id': req.params.messageId}, function(err, room){
         if(room){
             if(err){
                 console.error(err);
@@ -259,7 +272,7 @@ router.put('/:id/messages/:messageId', function(req, res){
 });
 
 router.delete('/:id/messages/:messageId', function(req, res){
-    Room.findOne({'_id': req.params.id, 'messages._id': req.params.messageId }, function(err, room){
+    Room.findOne({'id': req.params.id, 'messages._id': req.params.messageId }, function(err, room){
         if(room){
             if(err){
                 console.error(err);
