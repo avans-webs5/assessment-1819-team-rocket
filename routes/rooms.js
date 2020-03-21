@@ -18,7 +18,7 @@ router.get('/', function(req, res){
 });
 
 router.post('/', function(req, res){
-    const roomId = req.body.name.replace(' ', '_');
+    const roomId = req.body.name.replace(/\s/g, '_');
     let result = Room.findOne({id: roomId});
 
     result.then(room => {
