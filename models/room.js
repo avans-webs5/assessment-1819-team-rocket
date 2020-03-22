@@ -11,7 +11,7 @@ const roomSchema = new Schema({
     picture:        String,
     blacklist:      { enabled: Boolean, users: [{ type: Schema.Types.ObjectId, ref: 'User'}] },
     categories:     [{ type: String, default: 'public' }],
-    users:          [{ type: Schema.Types.ObjectId, ref: 'User' }],
+    users:          [{ user: { type: Schema.Types.ObjectId, ref: 'User'}, roles: [{type:String, default: 'guest' }]}],
     messages: [{
         user:       { type: Schema.Types.ObjectId, ref: 'User'},
         line:       { type: String, required: true },
@@ -50,6 +50,15 @@ roomSchema.virtual('messageUsers', {
         return users;
     }
 });
+
+roomSchema.methods.getUserRolesById = function(id){
+    for (let index = 0; index < this.users.length; index++) {
+        if(this.users[i].id === id){
+            return this.users[i].roles;
+        }
+    }
+    return [];
+}
 
 roomSchema.methods.getMessagesByName = function(name){
     if(name){
@@ -103,10 +112,11 @@ roomSchema.methods.removeMessageById = function(id){
 roomSchema.methods.containsUser = function(id){
     if(id){
         for (let i = 0; i < this.users.length; i++) {
-            if(this.users[i]._id == id) {
+            if(this.users[i].user.toString().localeCompare(id.toString()) === 0) {
+                console.log(this.users[i]);
                 return true;
             }
-        }
+        }   
         return false;
     }
 }
@@ -121,6 +131,13 @@ roomSchema.query.byName = function(name){
 roomSchema.query.byCategories = function(category){
     if(category){
         return this.find({'categories': category}).collation({locale: "en", strength: 1});
+    }
+    return this.find();
+}
+
+roomSchema.query.byIdUsers = function(id){
+    if(id){
+        return this.find({'users.id': id}).collation({locale: "en", strength: 1});
     }
     return this.find();
 }

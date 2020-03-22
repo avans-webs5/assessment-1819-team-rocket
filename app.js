@@ -71,10 +71,11 @@ require('./routes/routes')(app, passport, user);
 
 app.use(function (err, req, res, next) {
     try{
-        let error = JSON.parse(err.message);
+        let error = JSON.parse(err.message).ca;
         res.status(error.statusCode).send(error);
-    }catch(err){
+    }catch(e){
         if (!err.statusCode) err.statusCode = 500;
+        console.error(err.message);
         res.status(err.statusCode).send(err.message);
     }
 });

@@ -7,6 +7,7 @@ const extractJWT        = passportJWT.ExtractJwt;
 const jwtStrategy       = passportJWT.Strategy;
 
 const User          = require('../models/user');
+const Room          = require('../models/room');
 const configAuth    = require('./auth');
 
 module.exports = function(passport){
@@ -264,6 +265,31 @@ module.exports = function(passport){
         secretOrKey: configAuth.JWS.secret
     }, function(payload, done){
         process.nextTick(function(){
+            let userDocument = User.findOne({_id: payload.id});
+            let roomDocument = Room.find({});
+
+            userDocument.then(user => {
+                if(user){
+                    roomDocument.then(rooms => {
+                        let payload = {
+                            user: user,
+                            rooms: rooms || []
+                        }
+               
+                        return done(null, payload);
+                    }).catch(err => {
+                        console.error(err);
+                        return done(err, false);
+                    })
+                } else {
+                    return done(null, false);
+                } 
+            }).catch(err => {
+                return done(err, false)
+            });
+
+
+            /*
             User.findOne({_id: payload.id}, function(err, user){
                 if (err) {
                     return done(err, false);
@@ -273,7 +299,7 @@ module.exports = function(passport){
                 } else {
                     return done(null, false);
                 }
-            });
+            });*/
         });
     }));
 }
