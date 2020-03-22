@@ -8,7 +8,6 @@ router.get('/', function(req, res){
     .byName(req.query.name)
     .byCategories(req.query.category);
 
-
     result.then(rooms => {
         return res.status(200).json({ rooms, statusCode : 200, message: "OK" });
     }).catch(err => {
@@ -38,20 +37,18 @@ router.post('/', function(req, res){
             Room.create(newRoom, function(err, room){
                 if(err){
                     console.error(err);
-                    return res.status(500).json({ statusCode : 500, message: "Internal Server Error" })  
+                    return res.status(500).json({ statusCode : 500, message: "Internal Server Error" });
                 }
-    
                 res.status(201).json({room, statusCode : 201, message: "Created" });
             });
         } else {
-            res.status(400).json({statusCode : 400, message: "Roomname already in use" })
+            res.status(400).json({statusCode : 400, message: "Roomname already in use" });
         }
     });
-
 });
 
 router.all('/', function(req, res){
-    res.status(405).json({ statusCode : 405, message: "Method Not Allowed", Allow : "GET, POST" })  
+    res.status(405).json({ statusCode : 405, message: "Method Not Allowed", Allow : "GET, POST" });  
 });
 
 /////////////////////////////
@@ -94,7 +91,7 @@ router.delete('/:id', function(req, res){
 });
 
 router.all('/:id', function(req, res){
-    res.status(405).json({ statusCode : 405, message: "Method Not Allowed", Allow : "GET, PUT, DELETE" })  
+    res.status(405).json({ statusCode : 405, message: "Method Not Allowed", Allow : "GET, PUT, DELETE" });
 });
 
 /////////////////////////////
@@ -155,7 +152,7 @@ router.delete('/:id/users', function(req, res){
 });
 
 router.all('/:id/users', function(req, res){
-    res.status(405).json({ statusCode : 405, message: "Method Not Allowed", Allow : "GET, POST, DELETE" })  
+    res.status(405).json({ statusCode : 405, message: "Method Not Allowed", Allow : "GET, POST, DELETE" });
 });
 
 /////////////////////////////
@@ -175,7 +172,7 @@ router.get('/:id/users/:userId', function(req, res){
 });
 
 router.all('/:id/users/:userId', function(req, res){
-    res.status(405).json({ statusCode : 405, message: "Method Not Allowed", Allow : "GET" })  
+    res.status(405).json({ statusCode : 405, message: "Method Not Allowed", Allow : "GET" });
 });
 
 /////////////////////////////
@@ -225,7 +222,7 @@ router.post('/:id/messages', function(req, res){
 });
 
 router.all('/:id/messages', function(req, res){
-    res.status(405).json({ statusCode : 405, message: "Method Not Allowed", Allow : "GET, POST" })  
+    res.status(405).json({ statusCode : 405, message: "Method Not Allowed", Allow : "GET, POST" }); 
 });
 
 /////////////////////////////
@@ -240,7 +237,7 @@ router.get('/:id/messages/:messageId', function(req, res){
         }
 
         const message = room.getMessageById(req.params.messageId);
-        return res.status.status(200).json({ message, statusCode : 200, message: "OK" })   
+        return res.status.status(200).json({ message, statusCode : 200, message: "OK" });
     });
 });
 
@@ -260,7 +257,7 @@ router.put('/:id/messages/:messageId', function(req, res){
                         console.error(err);
                         return res.status(500).json({ statusCode : 500, message: "Internal Server Error" });
                     }
-                    return res.status.status(200).json({ message, statusCode : 200, message: "OK" })           
+                    return res.status.status(200).json({ message, statusCode : 200, message: "OK" });          
                 });
             } else {
                 return res.status(400).json({ statusCode : 400, message: "Bad Request" });
