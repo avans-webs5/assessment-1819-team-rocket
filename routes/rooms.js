@@ -21,11 +21,13 @@ module.exports = function(passport, user){
 
     //TODO add initial user that created the room to the room automaticly
     router.post('/', function(req, res){
+
+        if(!req.body.name)  return res.status(400).json({ statusCode : 400, message: "Bad Request" });
+
         const roomId = req.body.name.replace(/\s/g, '_');
         let result = Room.findOne({id: roomId});
     
         result.then(room => {
-            console.log(room);
             if(!room){
     
                 let newRoom = {
@@ -211,21 +213,24 @@ module.exports = function(passport, user){
                 console.error(err);
                 return res.status(500).json({ statusCode : 500, message: "Internal Server Error" });
             }
-            
-            if(req.user.user && req.body.line){
-                room.messages.push({ user: req.user.user.id, line: req.body.line});
-    
-                room.save(function(err){
-                    if(err){
-                        console.error(err);
-                        return res.status(500).json({ statusCode : 500, message: "Internal Server Error" });
-                    }
-    
-                    return res.status(200).json({ userMessage: { user: req.user.user.id, line: req.body.line}, statusCode : 200, message: "OK" });
-                });
+            if(room){
+                if(req.user.user && req.body.line){
+                    room.messages.push({ user: req.user.user.id, line: req.body.line});
+        
+                    room.save(function(err){
+                        if(err){
+                            console.error(err);
+                            return res.status(500).json({ statusCode : 500, message: "Internal Server Error" });
+                        }
+        
+                        return res.status(200).json({ userMessage: { user: req.user.user.id, line: req.body.line}, statusCode : 200, message: "OK" });
+                    });
+                } else {
+                    console.log(req.body);
+                    return res.status(400).json({ statusCode : 400, message: "Bad Request" });
+                }
             } else {
-                console.log(req.body);
-                return res.status(400).json({ statusCode : 400, message: "Bad Request" });
+                return res.status(204).send();
             }
         });
     });
