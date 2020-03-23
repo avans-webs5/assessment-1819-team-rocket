@@ -118,8 +118,7 @@ module.exports = function(passport){
                             user.providers.push(provider);
 
                             user.save(function(err) {
-                                if (err)
-                                    throw err;
+                                if (err) return done(err);
                                 return done(null, user);
                             });
                         }
@@ -141,11 +140,9 @@ module.exports = function(passport){
                         newUser.providers.push(provider);
 
                         newUser.save(function(err){
-                            if(err)
-                                throw err;
-    
+                            if(err) return done(err);
                                 return done(null, newUser);
-                        })
+                        });
                     }
                 });
             } else {
@@ -160,9 +157,7 @@ module.exports = function(passport){
                 user.providers.push(provider);
 
                 user.save(function(err){
-                    if(err)
-                        throw err;
-
+                    if(err) return done(err);
                     return done(null, user);
                 });
             }
@@ -201,8 +196,7 @@ module.exports = function(passport){
                             user.providers.push(provider);
 
                             user.save(function(err) {
-                                if (err)
-                                    throw err;
+                                if (err) return done(err);
                                 return done(null, user);
                             });
                         }
@@ -225,7 +219,7 @@ module.exports = function(passport){
                         newUser.providers.push(provider);
 
                         newUser.save(function(err){
-                            if(err) throw err;
+                            if(err) return done(err);
                             return done(null, newUser);
                         });
                     }   
@@ -248,8 +242,7 @@ module.exports = function(passport){
             }
 
             user.save(function(err){
-                if(err)
-                    throw err;
+                if(err) return done(err);
 
                 return done(null, user);
             });
