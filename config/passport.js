@@ -17,12 +17,14 @@ module.exports = function(passport){
     // =========================================================================
 
     passport.serializeUser(function(user, done){
-        done(null, user.user.id);
+        console.log(user);
+        done(null, user.id);
     });
 
     passport.deserializeUser(function(id, done){
         User.findById(id, function(err, user){
-            done(err, user.user);
+            console.log(user);
+            done(err, user);
         });
     });
 
@@ -259,17 +261,15 @@ module.exports = function(passport){
     }, function(payload, done){
         process.nextTick(function(){
             let userDocument = User.findOne({_id: payload.id});
-            let roomDocument = Room.find({});
+            let roomDocument = Room.findOne({'users.id': payload.id}).select('users.role');
 
             userDocument.then(user => {
                 if(user){
                     roomDocument.then(rooms => {
-                        let payload = {
-                            user: user,
-                            rooms: rooms || []
+                        if(rooms){
+                            user.extra.push({rooms: rooms});
                         }
-               
-                        return done(null, payload);
+                        return done(null, user);
                     }).catch(err => {
                         console.error(err);
                         return done(err, false);

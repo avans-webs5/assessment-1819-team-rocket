@@ -27,6 +27,7 @@ const userSchema = new Schema({
         provider: String,
         token: String,
     }],
+    extra: []
 });
 
 userSchema.set('toObject', { getters: true });

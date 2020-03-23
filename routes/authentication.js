@@ -7,7 +7,7 @@ module.exports = function(app, passport){
 
     app.get('/', passport.authenticate('jwt'), function(req, res){
 
-        res.status(200).json({ user: req.user.user, statusCode : 200, message: "OK" });
+        res.status(200).json({ user: req.user, statusCode : 200, message: "OK" });
     });
 
     app.all('/', function(req, res){

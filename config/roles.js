@@ -33,7 +33,7 @@ module.exports = function(user) {
     });
 
     user.use('edit room', '/:id', function (req){
-        let rooms = req.user.rooms || [];
+        let rooms = req.user.extra[0] || [];
 
         for (let index = 0; index < rooms.length; index++) {
             if(rooms[index].id == req.params.id){
