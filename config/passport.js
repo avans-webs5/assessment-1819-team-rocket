@@ -53,7 +53,7 @@ module.exports = function(passport){
                     newUser.email = email;
                     newUser.password = newUser.generateHash(password);
                     newUser.save(function(err) {
-                        if(err) throw err;
+                        if(err) return done(err);
                         return done(null, newUser);
                     });
                 }
@@ -287,19 +287,6 @@ module.exports = function(passport){
             }).catch(err => {
                 return done(err, false)
             });
-
-
-            /*
-            User.findOne({_id: payload.id}, function(err, user){
-                if (err) {
-                    return done(err, false);
-                }
-                if (user) {
-                    return done(null, user);
-                } else {
-                    return done(null, false);
-                }
-            });*/
         });
     }));
 }

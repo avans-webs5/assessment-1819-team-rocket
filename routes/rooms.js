@@ -212,7 +212,7 @@ module.exports = function(passport, user){
         let result = Room.findOne({id: req.params.id}).populate('messages.user', 'name'); 
         result.then(room => {
             if(room){
-                if(req.user.user && req.body.line){
+                if(req.body.line){
                     room.messages.push({ user: req.user.user.id, line: req.body.line});
         
                     room.save(function(err){
@@ -220,8 +220,7 @@ module.exports = function(passport, user){
                             console.error(err);
                             return res.status(500).json({ statusCode : 500, message: "Internal Server Error" });
                         }
-        
-                        return res.status(200).json({ userMessage: { user: req.user.user.id, line: req.body.line}, statusCode : 200, message: "OK" });
+                        return res.status(200).json({ userMessage: { id: req.user.user.id, name: req.user.user.name, line: req.body.line}, statusCode : 200, message: "OK" });
                     });
                 } else {
                     console.log(req.body);

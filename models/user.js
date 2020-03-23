@@ -17,7 +17,7 @@ const userSchema = new Schema({
             validator: function(v){
                 return emailRegex.test(v);
             },
-            message: props => `${emailRegex.toString() + props.value} The email needs to be valid.`
+            message: props => `The email ${props.value} is not valid.`
         } 
     },
     password: String,
