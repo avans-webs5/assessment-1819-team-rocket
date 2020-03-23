@@ -10,6 +10,7 @@ router.get('/', function(req, res) {
         .byName(req.query.name)
         .byEmail(req.query.email)
         .byRole(req.query.role)
+        .byPage(req.query.pageIndex, req.query.pageSize);
 
         result.then(users => {
                 let validatedUsers = [];

@@ -135,6 +135,14 @@ roomSchema.query.byCategories = function(category){
     return this.find();
 }
 
+roomSchema.query.byPage = function (pageIndex, pageSize) {
+    
+    pageIndex = pageIndex || 0;
+    pageSize = pageSize || 10;
+    
+    return this.find().skip(pageIndex * pageSize).limit(pageSize);
+};
+
 roomSchema.query.byIdUsers = function(id){
     if(id){
         return this.find({'users.id': id}).collation({locale: "en", strength: 1});

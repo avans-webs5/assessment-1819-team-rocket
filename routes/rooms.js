@@ -8,6 +8,7 @@ module.exports = function(passport, user){
     router.get('/', function(req, res){
         let result = Room.find({})
         .byName(req.query.name)
+        .byPage(req.query.pageIndex, req.query.pageSize)
         .byCategories(req.query.category);
     
         result.then(rooms => {
@@ -232,7 +233,7 @@ module.exports = function(passport, user){
             } else {
                 return res.status(204).send();
             }
-        });
+        }).populate('messages.user', 'name');
     });
     
     router.all('/:id/messages', function(req, res){

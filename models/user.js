@@ -54,6 +54,14 @@ userSchema.query.byRole = function(role){
     return this.find();
 }
 
+userSchema.query.byPage = function (pageIndex, pageSize) {
+    
+    pageIndex = pageIndex || 0;
+    pageSize = pageSize || 10;
+    
+    return this.find().skip(pageIndex * pageSize).limit(pageSize);
+};
+
 userSchema.methods.generateHash = function(password){
     return bcrypt.hashSync(password, bcrypt.genSaltSync(10), null);
 }
