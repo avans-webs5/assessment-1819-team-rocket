@@ -209,11 +209,8 @@ module.exports = function(passport, user){
     });
     
     router.post('/:id/messages', passport.authenticate('jwt', {session: false}), user.can('edit messages'), function(req, res){
-        Room.findOne({id: req.params.id}, function(err, room){
-            if(err) {
-                console.error(err);
-                return res.status(500).json({ statusCode : 500, message: "Internal Server Error" });
-            }
+        let result = Room.findOne({id: req.params.id}).populate('messages.user', 'name'); 
+        result.then(room => {
             if(room){
                 if(req.user.user && req.body.line){
                     room.messages.push({ user: req.user.user.id, line: req.body.line});
@@ -233,7 +230,12 @@ module.exports = function(passport, user){
             } else {
                 return res.status(204).send();
             }
-        }).populate('messages.user', 'name');
+        }).catch(err => {
+            if(err) {
+                console.error(err);
+                return res.status(500).json({ statusCode : 500, message: "Internal Server Error" });
+            }
+        });
     });
     
     router.all('/:id/messages', function(req, res){
