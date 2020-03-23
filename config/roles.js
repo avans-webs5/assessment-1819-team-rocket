@@ -13,26 +13,28 @@ module.exports = function(user) {
     });
 
     user.use('get room info', function(req){
-        return req.user.user.role === 'user';
+        return req.user.role === 'user';
     });
 
     user.use('join room', function(req){
-        return req.user.user.role === 'user';
+        return req.user.role === 'user';
     });
 
     user.use('leave room', function(req){
-        return req.user.user.role === 'user';
+        return req.user.role === 'user';
     });
 
     user.use('get messages', function(req){
-        return req.user.user.role === 'user';
+        return req.user.role === 'user';
     });
 
     user.use('edit messages', function(req){
-        return req.user.user.role === 'user';
+        return req.user.role === 'user';
     });
 
     user.use('edit room', '/:id', function (req){
+        console.log(rooms);
+
         let rooms = req.user.extra[0] || [];
 
         for (let index = 0; index < rooms.length; index++) {
