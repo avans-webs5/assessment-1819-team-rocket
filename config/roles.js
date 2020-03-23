@@ -7,16 +7,18 @@ module.exports = function(user) {
     });
 
     user.use(function (req) {
-        if (req.user.user.role === 'admin') {
+        if (req.user.role === 'admin') {
           return true;
         }
     });
 
     user.use('get room info', function(req){
+        console.log(req.user);
         return req.user.role === 'user';
     });
 
     user.use('join room', function(req){
+        console.log(req.user);
         return req.user.role === 'user';
     });
 
@@ -33,14 +35,12 @@ module.exports = function(user) {
     });
 
     user.use('edit room', '/:id', function (req){
-        console.log(rooms);
-
         let rooms = req.user.extra[0] || [];
-
+        
         for (let index = 0; index < rooms.length; index++) {
             if(rooms[index].id == req.params.id){
                 let result =  rooms[index].users.find(function(element) {
-                    if(element.user == req.user.user.id) return element;
+                    if(element.user == req.user.id) return element;
                 });
 
                 if(result){
