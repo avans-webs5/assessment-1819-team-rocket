@@ -59,7 +59,6 @@ roomSchema
           users.push(message.user.toString());
         }
       }
-      console.log(users);
       return users;
     }
   });
@@ -124,7 +123,6 @@ roomSchema.methods.containsUser = function(id) {
   if (id) {
     for (let i = 0; i < this.users.length; i++) {
       if (this.users[i].user.toString().localeCompare(id.toString()) === 0) {
-        console.log(this.users[i]);
         return true;
       }
     }

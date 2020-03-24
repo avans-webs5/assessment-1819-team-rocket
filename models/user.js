@@ -39,7 +39,6 @@ userSchema.set("toObject", { getters: true });
 userSchema.set("toJSON", { getters: true });
 
 userSchema.query.byName = function(name) {
-  console.log(name);
   if (name) {
     return this.find({ name: name }).collation({ locale: "en", strength: 1 });
   }

@@ -363,7 +363,6 @@ module.exports = function(passport, user) {
                   });
               });
             } else {
-              console.log(req.body);
               return res
                 .status(400)
                 .json({ statusCode: 400, message: "Bad Request" });
