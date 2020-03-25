@@ -299,7 +299,7 @@ module.exports = function(passport, user) {
     passport.authenticate("jwt", { session: false }),
     user.can("get messages"),
     function(req, res) {
-      let result = Room.find({ id: req.params.id }).populate(
+      let result = Room.findOne({ id: req.params.id }).populate(
         "messages.user",
         "name"
       );
