@@ -53,8 +53,8 @@ app.use(
 
 app.use(flash());
 
-//Password js
 
+//Password js
 app.use(session({ secret: secret, resave: true, saveUninitialized: false }));
 app.use(passport.initialize());
 app.use(passport.session());
