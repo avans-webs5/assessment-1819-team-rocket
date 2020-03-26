@@ -17,7 +17,7 @@ const userSchema = new Schema({
   profile_picture: String,
   email: {
     type: String,
-
+    unique: true,
     validate: {
       validator: function(v) {
         return emailRegex.test(v);

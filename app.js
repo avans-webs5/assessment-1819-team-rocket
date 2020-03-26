@@ -92,3 +92,5 @@ app.use(function(err, req, res, next) {
 
 http.listen(port);
 console.log("I am using port " + port);
+
+module.exports = app;
