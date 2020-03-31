@@ -1,6 +1,8 @@
 const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 
+const bcrypt = require("bcryptjs");
+
 mongoose.set("useCreateIndex", true);
 
 //TODO: fix unique naming issue
@@ -21,7 +23,7 @@ const roomSchema = new Schema({
     }
   ],
   messages: [{ type: Schema.Types.ObjectId, ref: "Message" }],
-  videos: [{ type: Schema.Types.ObjectId, ref: "Video" }]
+  queue: [{ type: Schema.Types.ObjectId, ref: "Video" }]
 });
 
 roomSchema.set("toObject", { getters: true });
@@ -55,6 +57,14 @@ roomSchema.methods.getUserRolesById = function(id) {
     }
   }
   return [];
+};
+
+roomSchema.methods.generateHash = function(password) {
+  return bcrypt.hashSync(password, bcrypt.genSaltSync(10), null);
+};
+
+roomSchema.methods.validHashedPassword = function(password) {
+  return bcrypt.compareSync(password, this.password);
 };
 
 roomSchema.methods.getMessagesByName = function(name) {
