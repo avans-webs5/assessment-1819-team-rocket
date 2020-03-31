@@ -14,12 +14,7 @@ module.exports = function (app, passport, user, io) {
         require("./routes/users")
     );
 
-    app.use(
-        "/rooms",
-        passport.authenticate("jwt", {session: false}),
-        user.can("get room info"),
-        require("./routes/rooms")(passport, user)
-    );
+    app.use("/rooms", passport.authenticate("jwt", {session: false}), user.can("get room info"), require("./routes/rooms")(passport, user));
 
     require("./routes/websocket")(io);
 
