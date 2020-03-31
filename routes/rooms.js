@@ -207,13 +207,13 @@ module.exports = function (passport, user) {
 
         result.then(room => {
             if (!req.body.line) {
-                const udpatedMessage = room.updateMessageById(req.params.messageId, req.body.line);
+                const updatedMessage = room.updateMessageById(req.params.messageId, req.body.line);
                 room.save(function (err, room) {
                     if (err) {
                         console.error(err);
                         return res.status(500).json({statusCode: 500, message: "Internal Server Error"});
                     }
-                    return res.status.status(200).json({ updatedMessage: message, statusCode: 200, message: "OK"});
+                    return res.status.status(200).json({ updatedMessage, statusCode: 200, message: "OK"});
                 });
             } else {
                 return res.status(400).json({statusCode: 400, message: "Bad Request"});
@@ -244,6 +244,66 @@ module.exports = function (passport, user) {
                     .status(404)
                     .json({statusCode: 404, message: "Message Or Room Not Found"});
             }
+        }).catch(err => {
+            console.error(err);
+            return res.status(500).json({statusCode: 500, message: "Internal Server Error"});
+        });
+    }
+
+    function getRoomCategories(req, res){
+        let result = Room.findOne({id: req.params.id});
+        result.then(room => {
+            if(room) res.status(200).json({ categories: room.categories, statusCode: 200, message: "OK" });
+            else  res.status(404).json({ statusCode: 404, message: "Room not found" });
+        }).catch(err => {
+            console.error(err);
+            return res.status(500).json({statusCode: 500, message: "Internal Server Error"});
+        });
+    }
+
+    function addRoomCategory(req, res){
+        if(!req.body.category) return res.status(400).json({ statusCode: 400, message: "Category not given" });
+
+        let result = Room.findOne({id: req.params.id});
+
+        result.then(room => {
+            if(room) {
+                if(!room.categories.includes(req.body.category.toLowerCase())){
+
+                    room.categories.push(req.body.category.toLowerCase());
+                    room.save((err, updatedRoom) => {
+                        if(err) {
+                            console.error(err);
+                            res.status(500).json({ statusCode: 500, message: "Internal Server Error" });
+                        }
+                        else res.status(200).json({ categories: updatedRoom.categories ,statusCode: 200, message: "OK" });
+                    });
+
+                } else res.status(204).send();
+            }
+            else res.status(404).json({ statusCode: 404, message: "Room not found" });
+        }).catch(err => {
+            console.error(err);
+            return res.status(500).json({statusCode: 500, message: "Internal Server Error"});
+        });
+    }
+
+    function removeRoomCategory(req, res){
+        let result = Room.findOne({id: req.params.id});
+        result.then(room => {
+
+            if(room) {
+                if(room.categories.includes(req.params.categoryId)){
+                    room.removeCategoryById(req.params.categoryId);
+                    room.save((err) => {
+                        if(err) res.status(500).json({ statusCode: 500, message: "Internal Server Error" });
+                        res.status(200).json({ statusCode: 200, message: "OK" });
+                    });
+                } else {
+                    res.status(404).json({ statusCode: 404, message: "Category not found" });
+                }
+            }
+            else res.status(404).json({ statusCode: 404, message: "Room not found" });
         }).catch(err => {
             console.error(err);
             return res.status(500).json({statusCode: 500, message: "Internal Server Error"});
@@ -326,6 +386,34 @@ module.exports = function (passport, user) {
                 .status(405)
                 .json({statusCode: 405, message: "Method Not Allowed", Allow: "GET, PUT, DELETE"});
         });
+
+    /////////////////////////////
+    ////:id/categories'/////////
+    ///////////////////////////
+
+    router.route('/:id/categories')
+        .get(getRoomCategories)
+        .post(addRoomCategory)
+        .all(function (req, res) {
+            res
+                .status(405)
+                .json({statusCode: 405, message: "Method Not Allowed", Allow: "GET, POST"});
+        });
+
+
+    /////////////////////////////
+    ////:id/category/categoryId'
+    ///////////////////////////
+
+    router.route('/:id/categories/:categoryId')
+        .delete(removeRoomCategory)
+        .all(function (req, res) {
+            res
+                .status(405)
+                .json({statusCode: 405, message: "Method Not Allowed", Allow: "DELETE"});
+        });
+
+
     return router;
 };
 
