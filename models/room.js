@@ -20,23 +20,8 @@ const roomSchema = new Schema({
       roles: [{ type: String, default: "guest" }]
     }
   ],
-  messages: [
-    {
-      user: { type: Schema.Types.ObjectId, ref: "User" },
-      line: { type: String, required: true },
-      timestamp: { type: Date, default: Date.now }
-    }
-  ],
-  videos: [
-    {
-      link: { type: String, required: true },
-      isPaused: { type: Boolean, required: true },
-      length: { type: Number, default: 0.0 },
-      videostamp: { type: Number, default: 0.0 },
-      deltatime: { type: Date, default: Date.now },
-      timestamp: { type: Date, default: Date.now }
-    }
-  ]
+  messages: [{ type: Schema.Types.ObjectId, ref: "Message" }],
+  videos: [{ type: Schema.Types.ObjectId, ref: "Video" }]
 });
 
 roomSchema.set("toObject", { getters: true });
