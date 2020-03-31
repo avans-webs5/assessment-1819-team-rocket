@@ -9,8 +9,8 @@ module.exports = function (app, passport, user, io) {
 
     app.use(
         "/users",
-        passport.authenticate("jwt", {session: false}),
-        user.can("access userinfo page"),
+        /*passport.authenticate("jwt", {session: false}),
+        user.can("access userinfo page"),*/
         require("./routes/users")
     );
 

@@ -2,27 +2,43 @@ const express = require("express");
 const router = express.Router();
 
 const Room = require("../models/room");
+const Message = require("../models/message");
 
 module.exports = function (passport, user) {
-    router.get("/", function (req, res) {
+
+    function getRooms(req, res) {
         let result = Room.find({})
             .byName(req.query.name)
             .byPage(req.query.pageIndex, req.query.pageSize)
             .byCategories(req.query.category);
 
+        result.then(rooms => {
+            return res.status(200).json({rooms, statusCode: 200, message: "OK"});
+        }).catch(err => {
+            console.error(err);
+            return res
+                .status(400)
+                .json({statusCode: 400, message: "Bad Request"});
+        });
+    }
+
+    function getRoom(req, res) {
+        let result = Room.find({id: req.params.id}).populate("users");
         result
-            .then(rooms => {
-                return res.status(200).json({rooms, statusCode: 200, message: "OK"});
+            .then(room => {
+                return res.status(200).json({room, statusCode: 200, message: "OK"});
             })
             .catch(err => {
-                console.error(err);
-                return res
-                    .status(400)
-                    .json({statusCode: 400, message: "Bad Request"});
+                if (err) {
+                    console.error(err);
+                    return res
+                        .status(400)
+                        .json({statusCode: 400, message: "Bad Request"});
+                }
             });
-    });
+    }
 
-    router.post("/", function (req, res) {
+    function createRoom(req, res) {
         if (!req.body.name)
             return res.status(400).json({statusCode: 400, message: "Bad Request"});
 
@@ -40,12 +56,6 @@ module.exports = function (passport, user) {
                         enabled: req.body.blacklistEnabled || false,
                         users: req.body.blacklistUsers || []
                     },
-                    users: [
-                        {
-                            user: req.user.id,
-                            roles: "admin"
-                        }
-                    ],
                     messages: [],
                     videos: []
                 };
@@ -65,456 +75,313 @@ module.exports = function (passport, user) {
                     .json({statusCode: 400, message: "Roomname already in use"});
             }
         });
-    });
+    }
 
-    router.all("/", function (req, res) {
-        res
-            .status(405)
-            .json({
-                statusCode: 405,
-                message: "Method Not Allowed",
-                Allow: "GET, POST"
-            });
-    });
+    function updateRoom(req, res) {
+        let result = Room.findOneAndUpdate({id: req.params.id}, req, body);
+
+        result.then(room => {
+            return res.status(200).json({room, statusCode: 200, message: "OK"});
+        }).catch(err => {
+            console.error(err);
+            return res
+                .status(400)
+                .json({statusCode: 400, message: "Bad Request"});
+        });
+    }
+
+    function deleteRoom(req, res){
+        let result = Room.deleteOne({id: req.params.id});
+        result.then(() => {
+            return res.status(200).json({statusCode: 200, message: "OK"});
+        }).catch(err => {
+            console.error(err);
+            return res.status(500).json({statusCode: 500, message: "Internal Server Error"});
+        });
+    }
+
+    function getRoomUsers(req, res) {
+        let result = Room.findOne({id: req.params.id}).populate("users");
+        result.then(room => {
+            return res
+                .status(200)
+                .json({users: room.users, statusCode: 200, message: "OK"});
+        }).catch(err => {
+            console.error(err);
+            return res.status(400).json({statusCode: 400, message: "Bad Request"});
+        });
+    }
+
+    function getRoomUser(req, res){
+        let result = Room.findOne({id: req.params.id, "users.id": req.params.userId});
+        result.then(user => {
+            return res.status(200).json({user, statusCode: 200, message: "OK"});
+        }).catch(err => {
+            console.error(err);
+            return res.status(400).json({statusCode: 400, message: "Bad Request"});
+        });
+    }
+
+    function addUserToRoom(req, res) {
+        let result = Room.findOne({id: req.params.id});
+
+        result.then(room => {
+            if (req.body.user && !room.containsUser(req.body.user)) {
+                room.users.push({user: req.body.user, roles: ["admin"]});
+                room.save(function (err, updatedRoom) {
+                    if (err) {
+                        console.error(err);
+                        return res.status(500).json({statusCode: 500, message: "Internal Server Error"});
+                    }
+                    return res.status(200).json({users: updatedRoom.users, statusCode: 200, message: "OK"});
+                });
+            } else {
+                return res.status(204).send();
+            }
+        }).catch(err => {
+                console.error(err);
+                return res.status(500).json({statusCode: 500, message: "Internal Server Error"});
+        });
+    }
+
+    function deleteUserFromRoom(req, res){
+        let result = Room.findOne({id: req.params.id});
+
+        result.then(room => {
+            if(room){
+                room.users.remove(req.params.userId);
+                room.save(function (err, updatedRoom) {
+                    if (err) {
+                        console.error(err);
+                        return res.status(500).json({statusCode: 500, message: "Internal Server Error"});
+                    }
+                    return res.status(200).json({ users: updatedRoom.users, statusCode: 200, message: "OK"});
+                });
+            } else {
+                return res.status(404).json({ users: room.users, statusCode: 404, message: "User not found"});
+            }
+        }).catch(err => {
+            console.error(err);
+            return res.status(500).json({statusCode: 500, message: "Internal Server Error"});
+        });
+    }
+
+    function getRoomMessages(req, res){
+        console.log('hiero');
+        let result = Room.find({id: req.params.id}).populate("messages");
+
+        result.then(room => {
+            if(room){
+                return res.status(200).json({messages: room.messages || [], statusCode: 200, message: "OK"});
+            } else{
+                return res.status(404).json({statusCode: 404, message: "Room not found"});
+            }
+        }).catch(err => {
+            console.error(err);
+            return res.status(400).json({statusCode: 400, message: "Bad Request"});
+        });
+    }
+
+    function getRoomMessage(req, res){
+        const messagePopulation = {
+            path: "messages",
+            populate: {
+                path: "user",
+                select: "name"
+            }
+        };
+
+        let result = Room.findOne({id: req.params.id, "messages._id": req.params.messageId}).populate(messagePopulation);
+
+        result.then(room => {
+            const message = room.getMessageById(req.params.messageId);
+            return res.status.status(200).json({message, statusCode: 200, message: "OK"});
+        }).catch(err => {
+            console.error(err);
+            return res.status(500).json({statusCode: 500, message: "Internal Server Error"});
+        });
+    }
+
+    function updateRoomMessage(req, res){
+        let result = Room.findOne({id: req.params.id, "messages._id": req.params.messageId}).populate("messages");
+
+        result.then(room => {
+            if (!req.body.line) {
+                const udpatedMessage = room.updateMessageById(req.params.messageId, req.body.line);
+                room.save(function (err, room) {
+                    if (err) {
+                        console.error(err);
+                        return res.status(500).json({statusCode: 500, message: "Internal Server Error"});
+                    }
+                    return res.status.status(200).json({ updatedMessage: message, statusCode: 200, message: "OK"});
+                });
+            } else {
+                return res.status(400).json({statusCode: 400, message: "Bad Request"});
+            }
+        }).catch(err => {
+            console.error(err);
+            return res
+                .status(500)
+                .json({statusCode: 500, message: "Internal Server Error"});
+        });
+    }
+
+    function deleteRoomMessage(req, res){
+        let result = Room.findOne({id: req.params.id, "messages._id": req.params.messageId});
+        result.then(room => {
+            if (room) {
+                if (room.removeMessageById(req.params.messageId)) {
+                    room.save(function (err) {
+                        if (err) {
+                            console.error(err);
+                            return res.status(500).json({statusCode: 500, message: "Internal Server Error"});
+                        }
+                    });
+                    return res.status(200).json({statusCode: 200, message: "OK"});
+                }
+            } else {
+                return res
+                    .status(404)
+                    .json({statusCode: 404, message: "Message Or Room Not Found"});
+            }
+        }).catch(err => {
+            console.error(err);
+            return res.status(500).json({statusCode: 500, message: "Internal Server Error"});
+        });
+    }
+
+    //TODO add initial user that created the room to the room automaticly
+    router.route("/")
+        .get(getRooms)
+        .post(createRoom)
+        .all(function (req, res) {
+            res
+                .status(405)
+                .json({statusCode: 405, message: "Method Not Allowed", Allow: "GET, POST"});
+        });
 
     /////////////////////////////
     ////:id/////////////////////
     ///////////////////////////
 
-    router.get("/:id", function (req, res) {
-        let result = Room.findOne({id: req.params.id}).populate("users");
-        result
-            .then(room => {
-                return res.status(200).json({room, statusCode: 200, message: "OK"});
-            })
-            .catch(err => {
-                if (err) {
-                    console.error(err);
-                    return res
-                        .status(400)
-                        .json({statusCode: 400, message: "Bad Request"});
-                }
-            });
-    });
-
-    router.put(
-        "/:id",
-        passport.authenticate("jwt", {session: false}),
-        user.can("edit room"),
-        function (req, res) {
-            Room.findOneAndUpdate({id: req.params.id}, req, body, function (
-                err,
-                room
-            ) {
-                if (err) {
-                    console.error(err);
-                    return res
-                        .status(400)
-                        .json({statusCode: 400, message: "Bad Request"});
-                }
-
-                return res.status(200).json({room, statusCode: 200, message: "OK"});
-            });
-        }
-    );
-
-    router.delete(
-        "/:id",
-        passport.authenticate("jwt", {session: false}),
-        user.can("edit room"),
-        function (req, res) {
-            Room.findOneAndDelete({id: req.params.id}, req, body, function (
-                err,
-                room
-            ) {
-                if (err) {
-                    console.error(err);
-                    return res
-                        .status(400)
-                        .json({statusCode: 400, message: "Bad Request"});
-                }
-
-                return res.status(200).json({room, statusCode: 200, message: "OK"});
-            });
-        }
-    );
-
-    router.all("/:id", function (req, res) {
-        res
-            .status(405)
-            .json({
-                statusCode: 405,
-                message: "Method Not Allowed",
-                Allow: "GET, PUT, DELETE"
-            });
-    });
+    router.route("/:id")
+        .get(getRoom)
+        .put(passport.authenticate("jwt", {session: false}), user.can("edit room"), updateRoom)
+        .delete(passport.authenticate("jwt", {session: false}), user.can("edit room"), deleteRoom)
+        .all(function (req, res) {
+            res
+                .status(405)
+                .json({statusCode: 405, message: "Method Not Allowed", Allow: "GET, PUT, DELETE"});
+        });
 
     /////////////////////////////
     ////:id/users///////////////
     ///////////////////////////
 
-    router.get("/:id/users", function (req, res) {
-        Room.findOne({id: req.params.id}, function (err, room) {
-            if (err) {
-                console.error(err);
-                return res
-                    .status(400)
-                    .json({statusCode: 400, message: "Bad Request"});
-            }
-            return res
-                .status(200)
-                .json({users: room.users, statusCode: 200, message: "OK"});
-        }).populate("users");
-    });
-
-    router.post(
-        "/:id/users",
-        passport.authenticate("jwt", {session: false}),
-        user.can("join room"),
-        function (req, res) {
-            let result = Room.findOne({id: req.params.id});
-
-            result
-                .then(room => {
-                    if (req.body.user && !room.containsUser(req.body.user)) {
-                        room.users.push({user: req.body.user, roles: ["admin"]});
-                        room.save(function (err, updatedRoom) {
-                            if (err) {
-                                console.error(err);
-                                return res
-                                    .status(500)
-                                    .json({statusCode: 500, message: "Internal Server Error"});
-                            }
-                            return res
-                                .status(200)
-                                .json({
-                                    users: updatedRoom.users,
-                                    statusCode: 200,
-                                    message: "OK"
-                                });
-                        });
-                    } else {
-                        return res.status(204).send();
-                    }
-                })
-                .catch(err => {
-                    console.error(err);
-                    return res
-                        .status(500)
-                        .json({statusCode: 500, message: "Internal Server Error"});
-                });
-        }
-    );
-
-    router.delete(
-        "/:id/users",
-        passport.authenticate("jwt", {session: false}),
-        user.can("leave room"),
-        function (req, res) {
-            let result = Room.findOne({id: req.params.id});
-
-            result
-                .then(room => {
-                    if (!req.body.userId) {
-                        return res
-                            .status(400)
-                            .json({
-                                users: room.users,
-                                statusCode: 400,
-                                message: "Bad Request"
-                            });
-                    } else if (room.containsUser(req.body.userId)) {
-                        room.users.remove(req.body.userId);
-                        room.save(function (err, updatedRoom) {
-                            if (err) {
-                                console.error(err);
-                                return res
-                                    .status(500)
-                                    .json({statusCode: 500, message: "Internal Server Error"});
-                            }
-                            return res
-                                .status(200)
-                                .json({
-                                    users: updatedRoom.users,
-                                    statusCode: 200,
-                                    message: "OK"
-                                });
-                        });
-                    }
-
-                    return res
-                        .status(404)
-                        .json({
-                            users: room.users,
-                            statusCode: 404,
-                            message: "User not found"
-                        });
-                })
-                .catch(err => {
-                    console.error(err);
-                    return res
-                        .status(500)
-                        .json({statusCode: 500, message: "Internal Server Error"});
-                });
-        }
-    );
-
-    router.all("/:id/users", function (req, res) {
-        res
-            .status(405)
-            .json({
-                statusCode: 405,
-                message: "Method Not Allowed",
-                Allow: "GET, POST, DELETE"
-            });
-    });
+    router.route("/:id/users")
+        .get(getRoomUsers)
+        .post(passport.authenticate("jwt", {session: false}), user.can("join room"), addUserToRoom)
+        .all(function (req, res) {
+            res
+                .status(405)
+                .json({statusCode: 405, message: "Method Not Allowed", Allow: "GET, POST"});
+        });
 
     /////////////////////////////
     ////:id/users/:userId'//////
     ///////////////////////////
 
-    router.get("/:id/users/:userId", function (req, res) {
-        Room.findOne(
-            {id: req.params.id, "message.user.id": req.params.userId},
-            function (err, user) {
-                if (err) {
-                    console.error(err);
-                    return res
-                        .status(400)
-                        .json({statusCode: 400, message: "Bad Request"});
-                }
-
-                return res.status(200).json({user, statusCode: 200, message: "OK"});
-            }
-        );
-    });
-
-    router.all("/:id/users/:userId", function (req, res) {
-        res
-            .status(405)
-            .json({statusCode: 405, message: "Method Not Allowed", Allow: "GET"});
-    });
+    router.route("/:id/users/:userId")
+        .get(getRoomUser)
+        .delete(passport.authenticate("jwt", {session: false}), user.can("leave room"), deleteUserFromRoom)
+        .all(function (req, res) {
+            res
+                .status(405)
+                .json({statusCode: 405, message: "Method Not Allowed", Allow: "GET, DELETE"});
+        });
 
     /////////////////////////////
     ////:id/messages////////////
     ///////////////////////////
 
-    router.get(
-        "/:id/messages",
-        passport.authenticate("jwt", {session: false}),
-        user.can("get messages"),
-        function (req, res) {
-            let result = Room.findOne({id: req.params.id}).populate(
-                "messages.user",
-                "name"
-            );
+    router.route('/:id/messages')
+        .get(passport.authenticate("jwt", {session: false}), user.can("get messages"), getRoomMessages)
+        .all(function (req, res) {
+            res
+                .status(405)
+                .json({ statusCode: 405, message: "Method Not Allowed", Allow: "GET" });
+        });
 
-            result
-                .then(room => {
-                    return res
-                        .status(200)
-                        .json({
-                            messages: room.getMessagesByName(req.query.username),
-                            statusCode: 200,
-                            message: "OK"
-                        });
-                })
-                .catch(err => {
-                    if (err) {
-                        console.error(err);
-                        return res
-                            .status(400)
-                            .json({statusCode: 400, message: "Bad Request"});
-                    }
-                });
-        }
-    );
-
-    router.post(
-        "/:id/messages",
-        passport.authenticate("jwt", {session: false}),
-        user.can("edit messages"),
-        function (req, res) {
-            let result = Room.findOne({id: req.params.id}).populate(
-                "messages.user",
-                "name"
-            );
-            result
-                .then(room => {
-                    if (room) {
-                        if (req.body.line) {
-                            room.messages.push({user: req.user.id, line: req.body.line});
-
-                            room.save(function (err) {
-                                if (err) {
-                                    console.error(err);
-                                    return res
-                                        .status(500)
-                                        .json({
-                                            statusCode: 500,
-                                            message: "Internal Server Error"
-                                        });
-                                }
-                                return res
-                                    .status(200)
-                                    .json({
-                                        userMessage: {
-                                            id: req.user.id,
-                                            name: req.user.name,
-                                            line: req.body.line
-                                        },
-                                        statusCode: 200,
-                                        message: "OK"
-                                    });
-                            });
-                        } else {
-                            return res
-                                .status(400)
-                                .json({statusCode: 400, message: "Bad Request"});
-                        }
-                    } else {
-                        return res.status(204).send();
-                    }
-                })
-                .catch(err => {
-                    if (err) {
-                        console.error(err);
-                        return res
-                            .status(500)
-                            .json({statusCode: 500, message: "Internal Server Error"});
-                    }
-                });
-        }
-    );
-
-    router.all("/:id/messages", function (req, res) {
-        res
-            .status(405)
-            .json({
-                statusCode: 405,
-                message: "Method Not Allowed",
-                Allow: "GET, POST"
-            });
-    });
 
     /////////////////////////////
     ////:id/messages/:messageId'
     ///////////////////////////
 
-    router.get("/:id/messages/:messageId", function (req, res) {
-        Room.findOne(
-            {id: req.params.id, "messages._id": req.params.messageId},
-            function (err, room) {
+    router.route('/:id/messages/:messageId')
+        .get(getRoomMessage)
+        .put(passport.authenticate("jwt", {session: false}), user.can("edit messages"), updateRoomMessage)
+        .delete(passport.authenticate("jwt", {session: false}), user.can("edit messages"), deleteRoomMessage)
+        .all( function (req, res) {
+            res
+                .status(405)
+                .json({statusCode: 405, message: "Method Not Allowed", Allow: "GET, PUT, DELETE"});
+        });
+    return router;
+};
+
+/*router.post(
+    "/:id/messages",
+    passport.authenticate("jwt", {session: false}),
+    user.can("edit messages"),
+    function (req, res) {
+        let result = Room.findOne({id: req.params.id}).populate(
+            "messages.user",
+            "name"
+        );
+        result
+            .then(room => {
+                if (room) {
+                    if (req.body.line) {
+                        room.messages.push({user: req.user.id, line: req.body.line});
+
+                        room.save(function (err) {
+                            if (err) {
+                                console.error(err);
+                                return res
+                                    .status(500)
+                                    .json({
+                                        statusCode: 500,
+                                        message: "Internal Server Error"
+                                    });
+                            }
+                            return res
+                                .status(200)
+                                .json({
+                                    userMessage: {
+                                        id: req.user.id,
+                                        name: req.user.name,
+                                        line: req.body.line
+                                    },
+                                    statusCode: 200,
+                                    message: "OK"
+                                });
+                        });
+                    } else {
+                        return res
+                            .status(400)
+                            .json({statusCode: 400, message: "Bad Request"});
+                    }
+                } else {
+                    return res.status(204).send();
+                }
+            })
+            .catch(err => {
                 if (err) {
                     console.error(err);
                     return res
                         .status(500)
                         .json({statusCode: 500, message: "Internal Server Error"});
                 }
-
-                const message = room.getMessageById(req.params.messageId);
-                return res.status
-                    .status(200)
-                    .json({message, statusCode: 200, message: "OK"});
-            }
-        );
-    });
-
-    router.put(
-        "/:id/messages/:messageId",
-        passport.authenticate("jwt", {session: false}),
-        user.can("edit messages"),
-        function (req, res) {
-            Room.findOne(
-                {id: req.params.id, "messages._id": req.params.messageId},
-                function (err, room) {
-                    if (room) {
-                        if (err) {
-                            console.error(err);
-                            return res
-                                .status(500)
-                                .json({statusCode: 500, message: "Internal Server Error"});
-                        }
-
-                        if (!req.body.line) {
-                            room.updateMessageById(req.params.messageId, req.body.line);
-                            room.save(function (err, room) {
-                                if (err) {
-                                    console.error(err);
-                                    return res
-                                        .status(500)
-                                        .json({
-                                            statusCode: 500,
-                                            message: "Internal Server Error"
-                                        });
-                                }
-                                return res.status
-                                    .status(200)
-                                    .json({message, statusCode: 200, message: "OK"});
-                            });
-                        } else {
-                            return res
-                                .status(400)
-                                .json({statusCode: 400, message: "Bad Request"});
-                        }
-                    } else {
-                        return res
-                            .status(404)
-                            .json({statusCode: 404, message: "Message Or Room Not Found"});
-                    }
-                }
-            );
-        }
-    );
-
-    router.delete(
-        "/:id/messages/:messageId",
-        passport.authenticate("jwt", {session: false}),
-        user.can("edit messages"),
-        function (req, res) {
-            Room.findOne(
-                {id: req.params.id, "messages._id": req.params.messageId},
-                function (err, room) {
-                    if (room) {
-                        if (err) {
-                            console.error(err);
-                            return res
-                                .status(500)
-                                .json({statusCode: 500, message: "Internal Server Error"});
-                        }
-                        if (room.removeMessageById(req.params.messageId)) {
-                            room.save(function (err) {
-                                if (err) {
-                                    console.error(err);
-                                    return res
-                                        .status(500)
-                                        .json({
-                                            statusCode: 500,
-                                            message: "Internal Server Error"
-                                        });
-                                }
-                            });
-                            return res.status(200).json({statusCode: 200, message: "OK"});
-                        }
-                    } else {
-                        return res
-                            .status(404)
-                            .json({statusCode: 404, message: "Message Or Room Not Found"});
-                    }
-                }
-            );
-        }
-    );
-
-    router.all("/:id/messages/:messageId", function (req, res) {
-        res
-            .status(405)
-            .json({
-                statusCode: 405,
-                message: "Method Not Allowed",
-                Allow: "GET, PUT, DELETE"
             });
-    });
-
-    return router;
-};
+    }
+);*/
