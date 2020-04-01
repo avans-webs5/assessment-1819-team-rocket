@@ -143,19 +143,22 @@ module.exports = function (passport, user) {
 
     function addUserToRoom(req, res) {
         let result = Room.findOne({id: req.params.id});
-
         result.then(room => {
-            if (req.body.user && !room.containsUser(req.body.user)) {
-                room.users.push({user: req.body.user, roles: ["admin"]});
-                room.save(function (err, updatedRoom) {
-                    if (err) {
-                        console.error(err);
-                        return res.status(500).json({statusCode: 500, message: "Internal Server Error"});
-                    }
-                    return res.status(200).json({users: updatedRoom.users, statusCode: 200, message: "OK"});
-                });
+            if(room.password && !room.validHashedPassword(req.body.password)){
+                return res.status(403).json({statusCode: 403, message: "Password incorrect"});
             } else {
-                return res.status(204).send();
+                if (req.body.user && !room.containsUser(req.body.user)) {
+                    room.users.push({user: req.body.user, roles: ["admin"]});
+                    room.save(function (err, updatedRoom) {
+                        if (err) {
+                            console.error(err);
+                            return res.status(500).json({statusCode: 500, message: "Internal Server Error"});
+                        }
+                        return res.status(200).json({users: updatedRoom.users, statusCode: 200, message: "OK"});
+                    });
+                } else {
+                    return res.status(204).send();
+                }
             }
         }).catch(err => {
                 console.error(err);

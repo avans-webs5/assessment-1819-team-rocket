@@ -66,7 +66,10 @@ roomSchema.statics.generateHash = function (password) {
 };
 
 roomSchema.methods.validHashedPassword = function (password) {
-    return bcrypt.compareSync(password, this.password);
+    if(password){
+        return bcrypt.compareSync(password, this.password);
+    }
+    return false;
 };
 
 roomSchema.methods.getMessagesByName = function (name) {
