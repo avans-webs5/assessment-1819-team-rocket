@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 
 const Room = require("../models/room");
+const Message = require("../models/message");
 
 module.exports = function (passport, user) {
 
@@ -22,10 +23,14 @@ module.exports = function (passport, user) {
     }
 
     function getRoom(req, res) {
-        let result = Room.find({id: req.params.id}).populate("users");
+        let result = Room.findOne({id: req.params.id}).populate("users");
         result
             .then(room => {
-                return res.status(200).json({room, statusCode: 200, message: "OK"});
+                if(room.length > 0){
+                    return res.status(200).json({room, statusCode: 200, message: "OK"});
+                } else {
+                    return res.status(404).json({statusCode: 404, message: "Room Not Found"})
+                }
             })
             .catch(err => {
                 if (err) {
@@ -120,11 +125,13 @@ module.exports = function (passport, user) {
     }
 
     function getRoomUsers(req, res) {
-        let result = Room.findOne({id: req.params.id}).populate("users");
+        let result = Room.findOne({id: req.params.id}).populate("users.user");
         result.then(room => {
-            return res
-                .status(200)
-                .json({users: room.users, statusCode: 200, message: "OK"});
+            if(room.users && room.users.length > 0){
+                return res.status(200).json({users: room.users, statusCode: 200, message: "OK"});
+            } else {
+                return res.status(404).json({statusCode: 404, message: "Users Not Found"});
+            }
         }).catch(err => {
             console.error(err);
             return res.status(400).json({statusCode: 400, message: "Bad Request"});
@@ -132,9 +139,14 @@ module.exports = function (passport, user) {
     }
 
     function getRoomUser(req, res){
-        let result = Room.findOne({id: req.params.id, "users.id": req.params.userId});
-        result.then(user => {
-            return res.status(200).json({user, statusCode: 200, message: "OK"});
+        let result = Room.findOne({id: req.params.id, "users.user": req.params.userId}).populate('users.user');
+        result.then(room => {
+            if(room.users && room.users.length > 0){
+                return res.status(200).json({user: room.users[0], statusCode: 200, message: "OK"});
+            } else{
+                return res.status(404).json({statusCode: 404, message: "User Not Found"})
+            }
+
         }).catch(err => {
             console.error(err);
             return res.status(400).json({statusCode: 400, message: "Bad Request"});
@@ -332,7 +344,55 @@ module.exports = function (passport, user) {
         });
     }
 
-    //TODO add initial user that created the room to the room automaticly
+    function getUserMessages(req, res){
+        let result = Room.findOne({id: req.params.id}).populate('messages');
+        result.then(room => {
+            let messages = room.getMessagesByUserId(req.params.userId) || [];
+            if(messages.length > 0){
+                return  res.status(200).json({ messages, statusCode: 200, message: "OK" });
+            } else{
+                return res.status(404).json({ statusCode: 404, message: "No messages found"});
+            }
+        }).catch(err => {
+            console.error(err);
+            res.status(500).json({ statusCode: 500, message: "Internal Server Error"});
+        });
+
+    }
+
+    function postUserMessage(req, res){
+        let result = Room.findOne({id: req.params.id});
+        result.then(room => {
+            if(room){
+                let newMessage = {
+                    sender: req.user.id,
+                    line: req.body.line
+                };
+
+                let messageResult = Message.create(newMessage);
+                messageResult.then(msg => {
+                    room.messages.push(msg.id);
+                    room.save(err => {
+                        if(err){
+                            console.error(err);
+                            res.status(500).json({ statusCode: 500, message: "Internal Server Error"});
+                        } else {
+                            res.status(201).json({ msg, statusCode: 201, message: "Message Created"})
+                        }
+                    });
+                }).catch(err => {
+                    console.error(err);
+                    res.status(500).json({ statusCode: 500, message: "Internal Server Error"})
+                });
+
+            }
+
+        }).catch(err => {
+            console.error(err);
+            res.status(500).json({ statusCode: 500, message: "Internal Server Error"});
+        });
+    }
+
     router.route("/")
         .get(getRooms)
         .post(passport.authenticate("jwt", {session: false}), user.can("join room"), createRoom)
@@ -380,6 +440,19 @@ module.exports = function (passport, user) {
             res
                 .status(405)
                 .json({statusCode: 405, message: "Method Not Allowed", Allow: "GET, DELETE"});
+        });
+
+    ///////////////////////////////
+    ////:id/users/:userId/Messages
+    /////////////////////////////
+
+    router.route("/:id/users/:userId/messages")
+        .get(getUserMessages)
+        .post(passport.authenticate("jwt", {session: false}), user.can("edit messages"), postUserMessage)
+        .all(function (req, res) {
+            res
+                .status(405)
+                .json({statusCode: 405, message: "Method Not Allowed", Allow: "GET, POST"});
         });
 
     /////////////////////////////

@@ -72,11 +72,26 @@ roomSchema.methods.validHashedPassword = function (password) {
     return false;
 };
 
+roomSchema.methods.getMessagesByUserId = function (id) {
+    if (id) {
+        let messages = [];
+
+        for (let i = 0; i < this.messages.length; i++) {
+            if (this.messages[i].sender.toString() === id.toString()) {
+                messages.push(this.messages[i]);
+            }
+        }
+        return messages;
+    }
+    return this.messages;
+};
+
+
 roomSchema.methods.getMessagesByName = function (name) {
     if (name) {
         let messages = [];
         for (let i = 0; i < this.messages.length; i++) {
-            if (this.messages[i].user.name.toLowerCase() == name.toLowerCase()) {
+            if (this.messages[i].user.name.toLowerCase() === name.toLowerCase()) {
                 messages.push(this.messages[i]);
             }
         }
@@ -88,7 +103,7 @@ roomSchema.methods.getMessagesByName = function (name) {
 roomSchema.methods.getMessageById = function (id) {
     if (id) {
         for (let i = 0; i < this.messages.length; i++) {
-            if (this.messages[i]._id == id) {
+            if (this.messages[i]._id === id) {
                 return this.messages[i];
             }
         }
@@ -98,7 +113,7 @@ roomSchema.methods.getMessageById = function (id) {
 roomSchema.methods.updateMessageById = function (id, newLine) {
     if (id && newLine) {
         for (let i = 0; i < this.messages.length; i++) {
-            if (this.messages[i]._id == id) {
+            if (this.messages[i].id == id) {
                 this.messages[i].line = newLine;
                 return this.messages[i];
             }

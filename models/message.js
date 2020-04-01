@@ -4,7 +4,7 @@ const Schema = mongoose.Schema;
 mongoose.set("useCreateIndex", true);
 
 const messageSchema = new Schema({
-    user: { type: Schema.Types.ObjectId, ref: "User" },
+    sender: { type: Schema.Types.ObjectId, ref: "User" },
     line: { type: String, required: true },
     timestamp: { type: Date, default: Date.now }
 });
