@@ -7,15 +7,9 @@ module.exports = function (app, passport, user, io) {
         passport
     );
 
-    app.use(
-        "/users",
-        /*passport.authenticate("jwt", {session: false}),
-        user.can("access userinfo page"),*/
-        require("./routes/users")
-    );
+    app.use("/users", passport.authenticate("jwt", {session: false}),user.can("access userinfo page"), require("./routes/users"));
 
     app.use("/rooms", passport.authenticate("jwt", {session: false}), user.can("get room info"), require("./routes/rooms")(passport, user));
-
     require("./routes/websocket")(io);
 
     /*function isLoggedIn(req, res, next) {
