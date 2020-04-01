@@ -393,6 +393,38 @@ module.exports = function (passport, user) {
         });
     }
 
+    function getUserRoles(req, res){
+        let result = Room.findOne({id: req.params.id}).select({"users.user": req.user.id});
+        result.then(user => {
+            if(user){
+                console.log(user);
+                return res.status(200).json({ user, statusCode: 200, message: "OK"})
+            } else {
+                return res.status(404).json({statusCode: 404, message: "Room Not Found"})
+            }
+        })
+    }
+
+    function addRoleToUser(req, res){
+        let result = Room.findOne({id: req.params.id}).select({"users.user": req.user.id});
+        result.then(user => {
+            if(user){
+                console.log(user);
+                return res.status(200).json({ user, statusCode: 200, message: "OK"})
+            } else {
+                return res.status(404).json({statusCode: 404, message: "Room Not Found"})
+            }
+        });
+    }
+
+    function removeRoleFromUser(req, res){
+
+    }
+
+    function updateRoleFromUser(req, res){
+
+    }
+
     router.route("/")
         .get(getRooms)
         .post(passport.authenticate("jwt", {session: false}), user.can("join room"), createRoom)
@@ -448,6 +480,16 @@ module.exports = function (passport, user) {
 
     router.route("/:id/users/:userId/messages")
         .get(getUserMessages)
+        .post(passport.authenticate("jwt", {session: false}), user.can("edit messages"), postUserMessage)
+        .all(function (req, res) {
+            res
+                .status(405)
+                .json({statusCode: 405, message: "Method Not Allowed", Allow: "GET, POST"});
+        });
+
+
+    router.route("/:id/users/:userId/roles")
+        .get(getUserRoles)
         .post(passport.authenticate("jwt", {session: false}), user.can("edit messages"), postUserMessage)
         .all(function (req, res) {
             res

@@ -23,7 +23,14 @@ const roomSchema = new Schema({
         }
     ],
     messages: [{type: Schema.Types.ObjectId, ref: "Message"}],
-    queue: [{type: Schema.Types.ObjectId, ref: "Video"}]
+    queue: [{
+        link: { type: String, required: true },
+        isPaused: { type: Boolean, required: true },
+        length: { type: Number, default: 0.0 },
+        videostamp: { type: Number, default: 0.0 },
+        deltatime: { type: Date, default: Date.now },
+        timestamp: { type: Date, default: Date.now }
+    }]
 });
 
 roomSchema.set("toObject", {getters: true});

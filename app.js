@@ -80,7 +80,7 @@ require("./routes")(app, passport, user, io);
 
 app.use(function (err, req, res, next) {
     try {
-        let error = JSON.parse(err.message).ca;
+        let error = JSON.parse(err.message);
         res.status(error.statusCode).send(error);
     } catch (e) {
         if (!err.name === "ValidatorError") err.statusCode = 400;
