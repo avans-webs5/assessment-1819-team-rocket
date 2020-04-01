@@ -59,8 +59,10 @@ roomSchema.methods.getUserRolesById = function (id) {
     return [];
 };
 
-roomSchema.methods.generateHash = function (password) {
-    return bcrypt.hashSync(password, bcrypt.genSaltSync(10), null);
+roomSchema.statics.generateHash = function (password) {
+    if(password){
+        return bcrypt.hashSync(password, bcrypt.genSaltSync(10), null);
+    }
 };
 
 roomSchema.methods.validHashedPassword = function (password) {

@@ -304,16 +304,13 @@ module.exports = function (passport) {
             function (payload, done) {
                 process.nextTick(function () {
                     let userDocument = User.findOne({_id: payload.id});
-                    let roomDocument = Room.findOne({"users.id": payload.id}).select(
-                        "users.role"
-                    );
+                    let roomDocument = Room.find({"users.user": payload.id}).select(["id","users.roles"]);
 
                     userDocument
                         .then(user => {
                             if (user) {
-                                roomDocument
-                                    .then(rooms => {
-                                        if (rooms) user.extra.push({rooms: rooms});
+                                roomDocument.then(rooms => {
+                                        if (rooms) user.extra.push(rooms);
                                         return done(null, user);
                                     }).catch(err => {
                                     console.error(err);

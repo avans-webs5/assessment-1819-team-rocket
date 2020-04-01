@@ -2,7 +2,6 @@ const express = require("express");
 const router = express.Router();
 
 const Room = require("../models/room");
-const Message = require("../models/message");
 
 module.exports = function (passport, user) {
 
@@ -50,15 +49,23 @@ module.exports = function (passport, user) {
                 let newRoom = {
                     id: roomId.toLowerCase(),
                     name: req.body.name,
-                    password: req.body.password || "",
+                    password: Room.generateHash(req.body.password) || "",
                     picture: req.body.picture || "",
                     blacklist: {
                         enabled: req.body.blacklistEnabled || false,
                         users: req.body.blacklistUsers || []
                     },
+                    users: [],
                     messages: [],
                     videos: []
                 };
+
+                let newUser = {
+                    user: req.user._id,
+                    roles: ["owner"]
+                };
+
+                newRoom.users.push(newUser);
 
                 Room.create(newRoom, function (err, room) {
                     if (err) {
@@ -78,7 +85,19 @@ module.exports = function (passport, user) {
     }
 
     function updateRoom(req, res) {
-        let result = Room.findOneAndUpdate({id: req.params.id}, req, body);
+        let id = req.params.id;
+
+        if(req.body.password) req.body.password = Room.generateHash(req.body.password);
+        if(req.body.name) id = req.body.name.replace(/\s/g, "_");
+
+        let updatedRoom = {
+            id: id.toLowerCase(),
+            name: req.body.name,
+            password: Room.generateHash(req.body.password),
+            picture: req.body.picture,
+        };
+
+        let result = Room.findOneAndUpdate({id: req.params.id}, updatedRoom);
 
         result.then(room => {
             return res.status(200).json({room, statusCode: 200, message: "OK"});
@@ -313,7 +332,7 @@ module.exports = function (passport, user) {
     //TODO add initial user that created the room to the room automaticly
     router.route("/")
         .get(getRooms)
-        .post(createRoom)
+        .post(passport.authenticate("jwt", {session: false}), user.can("join room"), createRoom)
         .all(function (req, res) {
             res
                 .status(405)
@@ -372,7 +391,6 @@ module.exports = function (passport, user) {
                 .json({ statusCode: 405, message: "Method Not Allowed", Allow: "GET" });
         });
 
-
     /////////////////////////////
     ////:id/messages/:messageId'
     ///////////////////////////
@@ -400,7 +418,6 @@ module.exports = function (passport, user) {
                 .json({statusCode: 405, message: "Method Not Allowed", Allow: "GET, POST"});
         });
 
-
     /////////////////////////////
     ////:id/category/categoryId'
     ///////////////////////////
@@ -412,7 +429,6 @@ module.exports = function (passport, user) {
                 .status(405)
                 .json({statusCode: 405, message: "Method Not Allowed", Allow: "DELETE"});
         });
-
 
     return router;
 };
