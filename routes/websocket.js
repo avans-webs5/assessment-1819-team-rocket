@@ -26,9 +26,8 @@ module.exports = function (io) {
         socket.on('join room', (data) => joinRoom(socket, data));
         // socket.on('my message', (data) => onMessageSend(socket, data));
         socket.on('send message', (data) => {
-            chatNsp.in(data.roomId).emit('received message', { message: data.msg });
+            chatNsp.in(data.roomId).emit('received message', {userId: data.name, message: data.msg});
         });
-
     });
 
     // Data: message, roomId
@@ -71,37 +70,17 @@ module.exports = function (io) {
     // Data: roomId
     const joinRoom = function (socket, data) {
         const roomId = data.roomId;
-        let result = Room.findOne({id: roomId}).populate('users.user');
-
-        result.then(room => {
-            let userExistsInRoom = false;
-            let userName = '';
-
-            const users = room.users;
-            for (let i = 0; i < users.length; i++)
-            {
-                if(users[i].user.id === socket.decoded_token.id)
-                {
-                    userName = users[i].user.name;
-                    userExistsInRoom = true;
-                    break;
-                }
-            }
-
-            if(!userExistsInRoom && !room.password)
-            {
-                
-            }
-            else
-            {
-                disconnectSocket(socket, "You are not allowed in this room");
-                return
-            }
-
-            socket.join(roomId, function() {
-                chatNsp.in(roomId).emit('joined room', 'hello');
+        const rooms = socket.adapter.rooms;
+        if(rooms.length > 0)
+        {
+            rooms.forEach(value => {
+                socket.leave(value);
             });
-        })
+        }
+
+        socket.join(roomId, function () {
+            chatNsp.in(roomId).emit('joined room', 'hello');
+        });
     };
 
     const disconnectSocket = function (socket, message) {
