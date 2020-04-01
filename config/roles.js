@@ -31,16 +31,29 @@ module.exports = function (user) {
         return req.user.role === "user";
     });
 
+    user.use("edit roles", function (req) {
+        let result = getUserRoomRoles(req);
+
+        if (result) { return result.includes("admin") || result.includes("owner"); }
+        return false;
+    });
+
     user.use("edit room", "/:id", function (req) {
+        let result = getUserRoomRoles(req);
+
+        if (result) { return result.includes("admin") || result.includes("owner"); }
+        return false;
+    });
+
+    function getUserRoomRoles(req){
         let rooms = req.user.extra[0] || [];
+        let result;
 
         for (let index = 0; index < rooms.length; index++) {
 
             if (rooms[index].id === req.params.id) {
-              let result = rooms[index].users[0].roles;
-              if (result) { return result.includes("admin") || result.includes("owner"); }
+                return result = rooms[index].users[0].roles;
             }
         }
-        return false;
-    });
+    }
 };

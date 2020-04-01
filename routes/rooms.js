@@ -393,35 +393,88 @@ module.exports = function (passport, user) {
     }
 
     function getUserRoles(req, res){
-        let result = Room.findOne({id: req.params.id}).select({"users.user": req.user.id});
+        let result = Room.findOne({id: req.params.id, 'users.user': req.params.userId }).select("users.roles");
         result.then(user => {
             if(user){
                 console.log(user);
-                return res.status(200).json({ user, statusCode: 200, message: "OK"})
+                return res.status(200).json({ roles: user.users[0].roles, statusCode: 200, message: "OK"});
             } else {
-                return res.status(404).json({statusCode: 404, message: "Room Not Found"})
+                return res.status(404).json({statusCode: 404, message: "Room Not Found"});
             }
-        })
+        }).catch(err =>{
+            console.error(err);
+            return res.status(500).json({statusCode: 500, message: "Internal Server Error"});
+        });
     }
 
     function addRoleToUser(req, res){
-        let result = Room.findOne({id: req.params.id}).select({"users.user": req.user.id});
-        result.then(user => {
-            if(user){
-                console.log(user);
-                return res.status(200).json({ user, statusCode: 200, message: "OK"})
+        if(!req.body.role) { return res.status(400).json({statusCode: 400, message: "Not A Valid Role"}) }
+
+        let result = Room.findOne({id: req.params.id, 'users.user': req.params.userId }).select("users.roles");
+        result.then(room => {
+            if(room){
+                if(room.users[0].roles.includes(req.body.role)) return res.status(304).send();
+                room.users[0].roles.push(req.body.role);
+                room.users[0].roles.remove("guest");
+
+                room.save(err => {
+                    if(err) return  res.status(500).json({statusCode: 500, message: "Internal Server Error"});
+                    return res.status(200).json({  roles: room.users[0].roles, statusCode: 200, message: "OK"})
+                });
+
             } else {
-                return res.status(404).json({statusCode: 404, message: "Room Not Found"})
+                return res.status(404).json({statusCode: 404, message: "Room Not Found"});
             }
+        }).catch(err => {
+            console.error(err);
+            return res.status(500).json({statusCode: 500, message: "Internal Server Error"});
         });
     }
 
     function removeRoleFromUser(req, res){
+        if(req.params.roleId === "guest") return res.status(400).json({statusCode: 400, message: "Can Not Remove Guest Role"});
+        let result = Room.findOne({id: req.params.id, 'users.user': req.params.userId, 'users.roles': req.params.roleId }).select("users.roles");
+        result.then(room => {
+            if(room){
+                room.users[0].roles.remove(req.params.roleId);
+                if(room.users[0].roles.length < 1) room.users[0].roles.push("guest");
 
+
+                room.save(err => {
+                    if(err) return  res.status(500).json({statusCode: 500, message: "Internal Server Error"});
+                    return res.status(200).json({  roles: room.users[0].roles, statusCode: 200, message: "OK"})
+                });
+
+            } else {
+                return res.status(404).json({statusCode: 404, message: "Room Or Roles Not Found"})
+            }
+        }).catch(err => {
+            console.error(err);
+            return res.status(500).json({statusCode: 500, message: "Internal Server Error"});
+        });
     }
 
     function updateRoleFromUser(req, res){
+        if(!req.body.role) { return res.status(400).json({statusCode: 400, message: "Not A Valid Role"}) }
 
+        let result = Room.findOne({id: req.params.id, 'users.user': req.params.userId, 'users.roles': req.params.roleId }).select("users.roles");
+        result.then(room => {
+            if(room){
+                room.users[0].roles.remove(req.params.roleId);
+                room.users[0].roles.push(req.body.role);
+
+                room.save(err => {
+                    if(err) return  res.status(500).json({statusCode: 500, message: "Internal Server Error"});
+                    return res.status(200).json({  roles: room.users[0].roles, statusCode: 200, message: "OK"})
+                });
+
+            } else {
+                return res.status(404).json({statusCode: 404, message: "Room Or Roles Not Found"})
+            }
+        }).catch(err => {
+            console.error(err);
+            return res.status(500).json({statusCode: 500, message: "Internal Server Error"});
+        });
     }
 
     router.route("/")
@@ -486,10 +539,22 @@ module.exports = function (passport, user) {
                 .json({statusCode: 405, message: "Method Not Allowed", Allow: "GET, POST"});
         });
 
+    ///////////////////////////////
+    ////:id/users/:userId/roles
+    /////////////////////////////
 
     router.route("/:id/users/:userId/roles")
         .get(getUserRoles)
-        .post(passport.authenticate("jwt", {session: false}), user.can("edit messages"), postUserMessage)
+        .post(passport.authenticate("jwt", {session: false}), user.can("edit roles"), addRoleToUser)
+        .all(function (req, res) {
+            res
+                .status(405)
+                .json({statusCode: 405, message: "Method Not Allowed", Allow: "GET, POST"});
+        });
+
+    router.route("/:id/users/:userId/roles/:roleId")
+        .put(passport.authenticate("jwt", {session: false}), user.can("edit roles"), updateRoleFromUser)
+        .delete(passport.authenticate("jwt", {session: false}), user.can("edit roles"), removeRoleFromUser)
         .all(function (req, res) {
             res
                 .status(405)
