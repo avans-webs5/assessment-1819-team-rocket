@@ -26,7 +26,7 @@ module.exports = function (passport, user) {
         let result = Room.findOne({id: req.params.id}).populate("users");
         result
             .then(room => {
-                if(room.length > 0){
+                if(room){
                     return res.status(200).json({room, statusCode: 200, message: "OK"});
                 } else {
                     return res.status(404).json({statusCode: 404, message: "Room Not Found"})
@@ -202,7 +202,7 @@ module.exports = function (passport, user) {
 
     function getRoomMessages(req, res){
         console.log('hiero');
-        let result = Room.find({id: req.params.id}).populate("messages");
+        let result = Room.findOne({id: req.params.id}).populate({path: 'messages', populate: {path: 'sender', select: 'name', model: 'User'}});
 
         result.then(room => {
             if(room){

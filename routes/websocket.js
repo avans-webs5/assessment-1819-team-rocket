@@ -2,6 +2,7 @@ const socketioJwt = require("socketio-jwt-decoder");
 const secret = require("../config/auth").JWS.secret;
 
 const Room = require("../models/room");
+const Message = require("../models/message");
 
 module.exports = function (io) {
     io.use(socketioJwt.authorize({
@@ -24,55 +25,60 @@ module.exports = function (io) {
         console.log("Hello " + socket.decoded_token.id);
 
         socket.on('join room', (data) => joinRoom(socket, data));
-        // socket.on('my message', (data) => onMessageSend(socket, data));
-        socket.on('send message', (data) => {
-            chatNsp.in(data.roomId).emit('received message', {userId: data.name, message: data.msg});
-        });
+        socket.on('send message', (data) => onMessageSend(socket, data));
     });
 
-    // Data: message, roomId
+    // Data: msg, roomId
     const onMessageSend = function (socket, data) {
         let roomId = data.roomId;
-        let message = data.message;
+        let message = data.msg;
         let userId = socket.decoded_token.id;
         if (!roomId && !message) {
             disconnectSocket(socket, "roomId: " + roomId + " message: " + message + " invalid data");
         }
 
-        let result = Room.findOne({id: roomId}).populate(
-            "messages.user",
-            "name"
-        );
+        let newMessage = {
+            sender: userId,
+            line: message,
+        };
 
-        result
-            .then(room => {
-                if (room) {
-                    room.messages.push({user: userId, line: message});
+        let result = Room.findOne({id: roomId});
 
-                    room.save(function (err) {
+
+        result.then(room => {
+            if (room) {
+                let messageResult = Message.create(newMessage);
+                messageResult.then(msg => {
+                    room.messages.push(msg.id);
+                    room.save(err => {
+                        if(err)
+                        {
+                            disconnectSocket(socket, err);
+                        }
+                    });
+
+                    chatNsp.in(roomId).emit('received message', {userId: data.name, message: data.msg});
+                })
+                    .catch(err => {
                         if (err) {
                             console.error(err);
-                            disconnectSocket(socket, "Couldn't save the message");
+                            disconnectSocket(socket, "Couldn't find the room");
                         }
-
-                        io.emit('chat message', message);
                     });
-                }
-            })
-            .catch(err => {
-                if (err) {
-                    console.error(err);
-                    disconnectSocket(socket, "Couldn't find the room");
-                }
-            });
+            }
+        }).catch(err => {
+            if (err) {
+                console.error(err);
+                disconnectSocket(socket, "Couldn't find the room");
+            }
+        });
     };
 
     // Data: roomId
     const joinRoom = function (socket, data) {
         const roomId = data.roomId;
         const rooms = socket.adapter.rooms;
-        if(rooms.length > 0)
-        {
+        if (rooms.length > 0) {
             rooms.forEach(value => {
                 socket.leave(value);
             });
