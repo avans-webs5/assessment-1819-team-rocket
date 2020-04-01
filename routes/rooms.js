@@ -22,7 +22,7 @@ module.exports = function (passport, user) {
     }
 
     function getRoom(req, res) {
-        let result = Room.find({id: req.params.id}).populate("users");
+        let result = Room.findOne({id: req.params.id}).populate("users");
         result
             .then(room => {
                 return res.status(200).json({room, statusCode: 200, message: "OK"});
