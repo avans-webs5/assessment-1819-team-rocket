@@ -39,7 +39,7 @@ function getUsers(req, res) {
         });
 
         if (validatedUsers.length > 0) {
-            res.status(200).json({validatedUsers, statusCode: 200, message: "OK"});
+            res.status(200).json({validatedUsers, statusCode: 200, message: "OK", pageIndex: { page: req.query.pageIndex || 0, items: req.query.pageSize || validatedUsers.length }});
         }
 
         res.status(204);

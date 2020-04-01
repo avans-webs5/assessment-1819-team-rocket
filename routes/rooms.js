@@ -13,7 +13,7 @@ module.exports = function (passport, user) {
             .byCategories(req.query.category);
 
         result.then(rooms => {
-            return res.status(200).json({rooms, statusCode: 200, message: "OK"});
+            return res.status(200).json({rooms, statusCode: 200, message: "OK", pageIndex: { page: req.query.pageIndex || 0, items: req.query.pageSize || rooms.length }});
         }).catch(err => {
             console.error(err);
             return res
@@ -125,7 +125,8 @@ module.exports = function (passport, user) {
     }
 
     function getRoomUsers(req, res) {
-        let result = Room.findOne({id: req.params.id}).populate("users.user");
+        let result = Room.findOne({id: req.params.id})
+            .populate("users.user");
         result.then(room => {
             if(room.users && room.users.length > 0){
                 return res.status(200).json({users: room.users, statusCode: 200, message: "OK"});
@@ -227,8 +228,8 @@ module.exports = function (passport, user) {
         let result = Room.findOne({id: req.params.id, "messages._id": req.params.messageId}).populate(messagePopulation);
 
         result.then(room => {
-            const message = room.getMessageById(req.params.messageId);
-            return res.status.status(200).json({message, statusCode: 200, message: "OK"});
+            const userMessage = room.getMessageById(req.params.messageId);
+            return res.status.status(200).json({userMessage, statusCode: 200, message: "OK"});
         }).catch(err => {
             console.error(err);
             return res.status(500).json({statusCode: 500, message: "Internal Server Error"});
@@ -551,6 +552,10 @@ module.exports = function (passport, user) {
                 .status(405)
                 .json({statusCode: 405, message: "Method Not Allowed", Allow: "GET, POST"});
         });
+
+    ////////////////////////////////////
+    ////:id/users/:userId/roles/:roleId
+    //////////////////////////////////
 
     router.route("/:id/users/:userId/roles/:roleId")
         .put(passport.authenticate("jwt", {session: false}), user.can("edit roles"), updateRoleFromUser)

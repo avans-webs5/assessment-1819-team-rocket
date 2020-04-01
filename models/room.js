@@ -36,26 +36,6 @@ const roomSchema = new Schema({
 roomSchema.set("toObject", {getters: true});
 roomSchema.set("toJSON", {getters: false});
 
-roomSchema
-    .virtual("messageUsers", {
-        ref: "User",
-        localField: "messages.user",
-        foreignField: "_id"
-    })
-    .get(function () {
-        let users = [];
-
-        if (this.messages) {
-            for (let i = 0; i < this.messages.length; i++) {
-                const message = this.messages[i];
-
-                if (!users.includes(message.user.toString())) {
-                    users.push(message.user.toString());
-                }
-            }
-            return users;
-        }
-    });
 
 roomSchema.methods.getUserRolesById = function (id) {
     for (let index = 0; index < this.users.length; index++) {
