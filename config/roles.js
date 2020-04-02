@@ -11,6 +11,10 @@ module.exports = function (user) {
         }
     });
 
+    user.use("get user info", function (req) {
+        return req.user.role === "user";
+    });
+
     user.use("get room info", function (req) {
         return req.user.role === "user";
     });
