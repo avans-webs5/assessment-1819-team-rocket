@@ -4,14 +4,19 @@ const router = express.Router();
 const User = require("../models/user");
 
 function postUser(req, res) {
-    if (req.body) {
-        let result = new User(req.body);
-        result.save(err => {
+    if (req.body.email && req.body.password) {
+
+        let username = req.body.email.slice(0, req.body.email.lastIndexOf("@"));
+        let newUser = new User();
+        newUser.id = username +  "#" + Math.random().toString().substr(2, 4);
+        newUser.name = username;
+        newUser.email = req.body.email;
+        newUser.password = newUser.generateHash(req.body.password);
+        newUser.profile_picture = req.body.profilePicture;
+
+        newUser.save(err => {
             if (err) errorHandler(res, err);
-            else res.status(200).json({result, statusCode: 200, message: "OK"});
-        }).catch(err => {
-            console.error(err);
-            return res.status(500).json({statusCode: 500, message: "Internal Server Error"});
+            else res.status(200).json({newUser, statusCode: 200, message: "OK"});
         });
     } else {
         return res.status(400).json({statusCode: 400, message: "Bad Request"});
@@ -31,7 +36,7 @@ function getUsers(req, res) {
 
         users.forEach(user => {
             let validUser = {
-                id: user._id,
+                id: user.id,
                 name: user.name,
                 email: user.email,
                 providers: user.providers,
@@ -53,8 +58,9 @@ function getUsers(req, res) {
 }
 
 function getUser(req, res){
+    let userId = req.params.id.replace("_", "#");
+    let result = User.findOne({ id: userId });
 
-    let result = User.find({ id: req.params.id });
     result.then(user => {
         if(user){
             return res.status(200).json({user, statusCode: 200, message: "OK"});
@@ -68,7 +74,9 @@ function getUser(req, res){
 }
 
 function updateUser(req, res){
-    let result = User.findOneAndUpdate({id: req.params.id}, req.body);
+    let userId = req.params.id.replace("_", "#");
+
+    let result = User.findOneAndUpdate({id: userId}, req.body);
     result.then(user => {
         if (user) {
             return res.status(200).json({user, statusCode: 200, message: "OK"});
@@ -82,7 +90,9 @@ function updateUser(req, res){
 }
 
 function deleteUser(req, res){
-    let result = User.findOneAndDelete({id: req.params.id});
+    let userId = req.params.id.replace("_", "#");
+
+    let result = User.findOneAndDelete({id: userId});
     result.then(user => {
         if(user){
             return res.status(200).json({statusCode: 200, message: "OK"});

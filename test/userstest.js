@@ -78,20 +78,19 @@ describe('/USERS ', function () {
         describe('a valid user', function () {
             it('should insert the user into the database and return 200', function (done) {
                 postRequest('/users', 200, {
-                    name: "testclient",
-                    email: "testclient123@gmail.com",
+                    email: "testclient@gmail.com",
                     password: "Testing123!"
                 }, function (err, res) {
                     if (err) {
                         done(err);
                     } else {
                         expect(res.body).to.not.be.undefined;
-                        expect(res.body).to.have.property('result');
-                        expect(res.body.result);
-                        expect(res.body.result).to.have.property('name');
-                        expect(res.body.result).to.have.property('email');
-                        expect(res.body.result).to.have.property('role');
-                        userId = res.body.result.id;
+                        expect(res.body).to.have.property('newUser');
+                        expect(res.body.newUser);
+                        expect(res.body.newUser).to.have.property('name');
+                        expect(res.body.newUser).to.have.property('email');
+                        expect(res.body.newUser).to.have.property('role');
+                        userId = res.body.newUser.id;
 
                         done();
                     }
@@ -114,7 +113,6 @@ describe('/USERS ', function () {
                 }, done);
             });
         });
-        after
     });
 
     describe('GET:', function () {
