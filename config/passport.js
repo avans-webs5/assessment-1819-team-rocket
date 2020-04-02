@@ -61,9 +61,10 @@ module.exports = function (passport) {
                                 );
                             }
 
-                            newUser.id = username +  "#" + Math.random().toString().substr(2, 4);
-
+                            let discriminator = Math.random().toString().substr(2, 4);
+                            newUser.id = username +  "#" + discriminator;
                             newUser.name = username;
+                            newUser.discriminator = discriminator;
                             newUser.email = email;
                             newUser.password = newUser.generateHash(password);
                             newUser.save(function (err) {
@@ -168,8 +169,11 @@ module.exports = function (passport) {
                             } else {
                                 //CREATE NEW ACCOUNT
                                 let newUser = new User();
-                                newUser.id = profile.displayName.replace(/\s/g, "_") + "#" +  Math.random().toString().substr(2, 4);
+                                let discriminator = Math.random().toString().substr(2, 4);
+
+                                newUser.id = profile.displayName.replace(/\s/g, "_") + "#" +  discriminator;
                                 newUser.name = profile.displayName;
+                                newUser.discriminator = discriminator;
                                 newUser.email = profile.emails[0].value;
 
                                 let provider = {
@@ -250,8 +254,10 @@ module.exports = function (passport) {
                             } else {
                                 let newUser = new User();
 
-                                newUser.id = profile.displayName.replace(/\s/g, "_") + "#" + Math.random().toString().substr(2, 4);
+                                let discriminator = Math.random().toString().substr(2, 4);
+                                newUser.id = profile.displayName.replace(/\s/g, "_") + "#" + discriminator;
                                 newUser.name = profile.displayName;
+                                newUser.discriminator = discriminator;
                                 newUser.profile_picture = profile.photos[0].value;
                                 newUser.email = profile.emails[0].value;
 
