@@ -61,7 +61,7 @@ module.exports = function (passport) {
                                 );
                             }
 
-                            newUser.id = username +  Math.random().toString().substr(2, 4);
+                            newUser.id = username +  "#" + Math.random().toString().substr(2, 4);
 
                             newUser.name = username;
                             newUser.email = email;
@@ -168,7 +168,7 @@ module.exports = function (passport) {
                             } else {
                                 //CREATE NEW ACCOUNT
                                 let newUser = new User();
-                                newUser.id = profile.displayName.replace(/\s/g, "_") + Math.random().toString().substr(2, 4);
+                                newUser.id = profile.displayName.replace(/\s/g, "_") + "#" +  Math.random().toString().substr(2, 4);
                                 newUser.name = profile.displayName;
                                 newUser.email = profile.emails[0].value;
 
@@ -250,7 +250,7 @@ module.exports = function (passport) {
                             } else {
                                 let newUser = new User();
 
-                                newUser.id = profile.displayName.replace(/\s/g, "_") + Math.random().toString().substr(2, 4);
+                                newUser.id = profile.displayName.replace(/\s/g, "_") + "#" + Math.random().toString().substr(2, 4);
                                 newUser.name = profile.displayName;
                                 newUser.profile_picture = profile.photos[0].value;
                                 newUser.email = profile.emails[0].value;
