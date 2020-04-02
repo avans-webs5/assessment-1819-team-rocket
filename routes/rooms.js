@@ -62,7 +62,10 @@ module.exports = function (passport, user) {
                     },
                     users: [],
                     messages: [],
-                    videos: []
+                    videos: [],
+                    roomState: {
+                        isPaused: true
+                    }
                 };
 
                 let newUser = {
