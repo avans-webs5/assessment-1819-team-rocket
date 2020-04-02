@@ -3,16 +3,12 @@ const bcrypt = require("bcryptjs");
 
 const Schema = mongoose.Schema;
 
-
-const emailRegex = new RegExp(
-  '^(([^<>()\\[\\]\\.,;:\\s@"]+(\\.[^<>()[]\\.,;:\\s@"]+)*)|(".+"))@((\\[[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}])|(([a-zA-Z\\-0-9]+\\.)+[a-zA-Z]{2,}))$'
-);
-const passwordRegex = new RegExp(
-  '^.*(?=.{8,})(?=.*[a-zA-Z])(?=.*\\d)(?=.*[!#$%&? "]).*$'
-);
+const emailRegex = new RegExp('^(([^<>()\\[\\]\\.,;:\\s@"]+(\\.[^<>()[]\\.,;:\\s@"]+)*)|(".+"))@((\\[[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}])|(([a-zA-Z\\-0-9]+\\.)+[a-zA-Z]{2,}))$');
+const passwordRegex = new RegExp('^.*(?=.{8,})(?=.*[a-zA-Z])(?=.*\\d)(?=.*[!#$%&? "]).*$');
 
 //TODO: use name as custom id
 const userSchema = new Schema({
+  id: { type: String, required: true },
   name: { type: String, required: true },
   profile_picture: String,
   email: {

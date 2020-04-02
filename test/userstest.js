@@ -142,7 +142,7 @@ describe('/USERS ', function () {
 });
 describe('/USERS/:ID ', function () {
     describe('GET:', function () {
-        it('give OK and return all users', function (done) {
+        it('give OK and return given user', function (done) {
             getRequest('/users/testclient', 200, function (err, res) {
 
                 if (err) {

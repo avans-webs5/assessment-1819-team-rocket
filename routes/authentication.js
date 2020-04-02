@@ -21,7 +21,7 @@ module.exports = function(app, passport) {
   app.post("/login", passport.authenticate("local-login"), function(req, res) {
     let token = generateTokenResponse(req);
     let user = {
-      id: req.user._id,
+      id: req.user.id,
       name: req.user.name,
       email: req.user.email,
       token: token,
@@ -47,7 +47,7 @@ module.exports = function(app, passport) {
   ) {
     let token = generateTokenResponse(req);
     let user = {
-      id: req.user._id,
+      id: req.user.id,
       name: req.user.name,
       email: req.user.email,
       token: token,
@@ -108,7 +108,7 @@ module.exports = function(app, passport) {
     function(req, res) {
       let token = generateTokenResponse(req);
       let user = {
-        id: req.user._id,
+        id: req.user.id,
         name: req.user.name,
         email: req.user.email,
         token: token,
@@ -165,7 +165,7 @@ module.exports = function(app, passport) {
   ) {
     let token = generateTokenResponse(req);
     let user = {
-      id: req.user._id,
+      id: req.user.id,
       name: req.user.name,
       email: req.user.email,
       token: token,

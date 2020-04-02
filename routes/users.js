@@ -9,6 +9,9 @@ function postUser(req, res) {
         result.save(err => {
             if (err) errorHandler(res, err);
             else res.status(200).json({result, statusCode: 200, message: "OK"});
+        }).catch(err => {
+            console.error(err);
+            return res.status(500).json({statusCode: 500, message: "Internal Server Error"});
         });
     } else {
         return res.status(400).json({statusCode: 400, message: "Bad Request"});
@@ -51,14 +54,12 @@ function getUsers(req, res) {
 
 function getUser(req, res){
 
-    let result = User.findById(req.params.id);
+    let result = User.find({ id: req.params.id });
     result.then(user => {
         if(user){
             return res.status(200).json({user, statusCode: 200, message: "OK"});
         } else {
-            return res
-                .status(404)
-                .json({statusCode: 404, message: "User Not Found"});
+            return res.status(404).json({statusCode: 404, message: "User Not Found"});
         }
     }).catch(err => {
         console.error(err);
@@ -67,28 +68,30 @@ function getUser(req, res){
 }
 
 function updateUser(req, res){
-    let result = User.findByIdAndUpdate(req.params.id, req.body);
+    let result = User.findOneAndUpdate({id: req.params.id}, req.body);
     result.then(user => {
         if (user) {
             return res.status(200).json({user, statusCode: 200, message: "OK"});
         } else {
-            return res
-                .status(404)
-                .json({statusCode: 404, message: "User Not Found"});
+            return res.status(404).json({statusCode: 404, message: "User Not Found"});
         }
     }).catch(err => {
         console.error(err);
-        return res.status(400).json({statusCode: 400, message: "Bad Request"});
+        return res.status(500).json({statusCode: 500, message: "Internal Server Error"});
     });
 }
 
 function deleteUser(req, res){
-    let result = User.findByIdAndDelete(req.params.id);
-    result.then(() => {
-        return res.status(200).json({statusCode: 200, message: "OK"});
+    let result = User.findOneAndDelete({id: req.params.id});
+    result.then(user => {
+        if(user){
+            return res.status(200).json({statusCode: 200, message: "OK"});
+        } else {
+            return res.status(404).json({statusCode: 404, message: "User Not Found"});
+        }
     }).catch(err => {
         console.log(err);
-        return res.status(400).json({statusCode: 400, message: "Bad Request"});
+        return res.status(500).json({statusCode: 500, message: "Internal Server Error"});
     });
 }
 
@@ -108,9 +111,7 @@ router.route("/")
     .get(getUsers)
     .post(postUser)
     .all((req, res) => {
-        res
-            .status(405)
-            .json({statusCode: 405, message: "Method Not Allowed", Allow: "GET, POST"});
+        res.status(405).json({statusCode: 405, message: "Method Not Allowed", Allow: "GET, POST"});
     });
 
 router.route("/:id")
@@ -118,13 +119,7 @@ router.route("/:id")
     .put(updateUser)
     .delete(deleteUser)
     .all(function(req, res){
-        res
-            .status(405)
-            .json({
-                statusCode: 405,
-                message: "Method Not Allowed",
-                Allow: "GET, PUT, DELETE"
-            });
+        res.status(405).json({statusCode: 405, message: "Method Not Allowed", Allow: "GET, PUT, DELETE"});
     });
 
 module.exports = router;
