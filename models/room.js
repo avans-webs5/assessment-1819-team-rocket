@@ -23,12 +23,13 @@ const roomSchema = new Schema({
         }
     ],
     messages: [{type: Schema.Types.ObjectId, ref: "Message"}],
+    roomState: {
+        isPaused: { type: Boolean, required: true },
+        videostamp: { type: Number, default: 0.0 },
+        // deltatime: { type: Date, default: Date.now },
+    },
     queue: [{
         link: { type: String, required: true },
-        isPaused: { type: Boolean, required: true },
-        length: { type: Number, default: 0.0 },
-        videostamp: { type: Number, default: 0.0 },
-        deltatime: { type: Date, default: Date.now },
         timestamp: { type: Date, default: Date.now }
     }]
 });

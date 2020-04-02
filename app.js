@@ -83,7 +83,7 @@ app.use(function (err, req, res, next) {
         let error = JSON.parse(err.message);
         res.status(error.statusCode).send(error.message);
     } catch (e) {
-        if (!err.name === "ValidatorError") err.statusCode = 400;
+        if (!err.name === "ValidationError") err.statusCode = 400;
         else if (!err.statusCode) err.statusCode = 500;
 
         console.error(err.message);
