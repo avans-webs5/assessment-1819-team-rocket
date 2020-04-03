@@ -27,7 +27,9 @@ module.exports = function (io) {
         socket.on('join room', (data) => joinRoom(socket, data));
         socket.on('send message', (data) => onMessageSend(socket, data));
         socket.on('add url', (data) => addUrlToRoom(socket, data));
-        socket.on('update queue', (data) => swapQueueForRoom(socket, data))
+        socket.on('update queue', (data) => swapQueueForRoom(socket, data));
+        socket.on('video paused', (data) => pauseVideoForSocket(socket, data));
+        socket.on('video resume', (data) => resumeVideoForSocket(socket, data));
     });
 
     // Data: msg, roomId
@@ -87,6 +89,7 @@ module.exports = function (io) {
 
         socket.join(roomId, function () {
             chatNsp.in(roomId).emit('joined room', 'hello');
+            chatNsp.in(roomId).emit('request time');
         });
     };
 
@@ -143,8 +146,7 @@ module.exports = function (io) {
                 room.queue[foundTo].position = from;
 
                 room.save(err => {
-                    if(err)
-                    {
+                    if (err) {
                         disconnectSocket(socket, "something went wrong when reordering.");
                     }
                 });
@@ -155,6 +157,57 @@ module.exports = function (io) {
             }
         });
     }
+
+    function resumeVideoForSocket(socket, data) {
+        const roomId = getRoomOfSocket(socket);
+
+        const result = Room.findOne({id: roomId});
+        result.then(room => {
+            if (room) {
+                if (room.roomState.isPaused) {
+                    room.roomState.isPaused = false;
+                    room.roomState.pausedAt = 0.0;
+
+                    room.save(err => {
+                        if (err) {
+                            disconnectSocket(socket, "something went wrong while saving room");
+                        }
+                    });
+
+                    chatNsp.in(roomId).emit('resume video');
+                }
+            } else {
+                disconnectSocket(socket, "room does not exist");
+            }
+        })
+    }
+
+
+    function pauseVideoForSocket(socket, data) {
+        const roomId = getRoomOfSocket(socket);
+
+        const result = Room.findOne({id: roomId});
+        result.then(room => {
+            if (room) {
+                // if already paused then let the client know where it was paused first.
+                if (!room.roomState.isPaused) {
+                    room.roomState.isPaused = true;
+                    room.roomState.pausedAt = data.pausedAt;
+
+                    room.save(err => {
+                        if (err) {
+                            disconnectSocket(socket, "something went wrong while pausing.");
+                        }
+                    });
+                }
+
+                chatNsp.in(roomId).emit('pause video', {pausedAt: room.roomState.pausedAt});
+            } else {
+                disconnectSocket(socket, "room does not exist");
+            }
+        })
+    }
+
 
     const disconnectSocket = function (socket, message) {
         console.log(message + "... disconnecting");

@@ -27,6 +27,7 @@ const roomSchema = new Schema({
         isPaused: { type: Boolean, required: true },
         // Tracks for when the users have started the video.
         videostamp: { type: Date, default: Date.now },
+        pausedAt: {type: Number, default: 0.0}
         // deltatime: { type: Date, default: Date.now },
     },
     queue: [{
