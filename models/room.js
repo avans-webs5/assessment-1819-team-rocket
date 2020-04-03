@@ -18,7 +18,7 @@ const roomSchema = new Schema({
     categories: [{type: String, default: "public"}],
     users: [
         {
-            user: {type: Schema.Types.ObjectId, ref: "User"},
+            user: {type: String, ref: "User"},
             roles: [{type: String, default: "guest"}]
         }
     ],
@@ -39,6 +39,12 @@ const roomSchema = new Schema({
 roomSchema.set("toObject", {getters: true});
 roomSchema.set("toJSON", {getters: false});
 
+
+roomSchema.virtual('userData', {
+    ref: 'User',
+    localField: 'users.user',
+    foreignField: 'id'
+});
 
 roomSchema.methods.getUserRolesById = function (id) {
     for (let index = 0; index < this.users.length; index++) {
@@ -92,9 +98,9 @@ roomSchema.methods.getMessagesByName = function (name) {
 
 roomSchema.methods.getMessageById = function (id) {
     if (id) {
-        for (let i = 0; i < this.messages.length; i++) {
-            if (this.messages[i]._id === id) {
-                return this.messages[i];
+        for (const message of this.messages){
+            if (message.id.toString() === id.toString()) {
+                return this.messages;
             }
         }
     }
@@ -102,10 +108,10 @@ roomSchema.methods.getMessageById = function (id) {
 
 roomSchema.methods.updateMessageById = function (id, newLine) {
     if (id && newLine) {
-        for (let i = 0; i < this.messages.length; i++) {
-            if (this.messages[i].id == id) {
-                this.messages[i].line = newLine;
-                return this.messages[i];
+        for (const message of this.messages){
+            if (message.id.toString() === id) {
+                message.line = newLine;
+                return message;
             }
         }
     }
@@ -113,9 +119,9 @@ roomSchema.methods.updateMessageById = function (id, newLine) {
 
 roomSchema.methods.removeMessageById = function (id) {
     if (id) {
-        for (let i = 0; i < this.messages.length; i++) {
-            if (this.messages[i].id === id) {
-                this.messages.remove(this.messages[i]);
+        for (const message of this.messages){
+            if (message.toString() === id) {
+                this.messages.remove(message);
                 return true;
             }
         }
@@ -140,7 +146,8 @@ roomSchema.methods.removeCategoryById = function (id) {
 roomSchema.methods.containsUser = function (id) {
     if (id) {
         for (let i = 0; i < this.users.length; i++) {
-            if (this.users[i].user.toString().localeCompare(id.toString()) === 0) {
+            console.log(this.users[i] + ' ' + id);
+            if (this.users[i].user.toString() === id.toString()) {
                 return true;
             }
         }

@@ -6,10 +6,12 @@ const User = require("../models/user");
 function postUser(req, res) {
     if (req.body.email && req.body.password) {
 
+        let discriminator =  Math.random().toString().substr(2, 4);
         let username = req.body.email.slice(0, req.body.email.lastIndexOf("@"));
         let newUser = new User();
-        newUser.id = username +  "#" + Math.random().toString().substr(2, 4);
+        newUser.id = username +  "#" + discriminator;
         newUser.name = username;
+        newUser.discriminator = discriminator;
         newUser.email = req.body.email;
         newUser.password = newUser.generateHash(req.body.password);
         newUser.profile_picture = req.body.profilePicture;
@@ -75,11 +77,20 @@ function getUser(req, res){
 
 function updateUser(req, res){
     let userId = req.params.id.replace("_", "#");
+    let result = User.findOne({id: userId});
 
-    let result = User.findOneAndUpdate({id: userId}, req.body);
-    result.then(user => {
-        if (user) {
-            return res.status(200).json({user, statusCode: 200, message: "OK"});
+    result.then(oldUser => {
+        if (oldUser) {
+            oldUser.id = (req.body.name) ? req.body.name +  "#" + oldUser.discriminator: oldUser.id;
+            oldUser.name = req.body.name || oldUser.name;
+            oldUser.email = req.body.email || oldUser.email;
+            oldUser.password = oldUser.generateHash(req.body.password) || oldUser.password;
+            oldUser.profile_picture = req.body.profilePicture || oldUser.profile_picture;
+
+            oldUser.save((err, user) => {
+                if(err) return res.status(500).json({statusCode: 500, message: "Internal Server Error"});
+                else return res.status(200).json({user, statusCode: 200, message: "OK"});
+            });
         } else {
             return res.status(404).json({statusCode: 404, message: "User Not Found"});
         }

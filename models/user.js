@@ -10,6 +10,7 @@ const passwordRegex = new RegExp('^.*(?=.{8,})(?=.*[a-zA-Z])(?=.*\\d)(?=.*[!#$%&
 const userSchema = new Schema({
   id: { type: String, required: true },
   name: { type: String, required: true },
+  discriminator: { type: String, required: true },
   profile_picture: String,
   email: {
     type: String,
@@ -45,10 +46,7 @@ userSchema.query.byName = function(name) {
 
 userSchema.query.byEmail = function(email) {
   if (email) {
-    return this.findOne({ email: email }).collation({
-      locale: "en",
-      strength: 1
-    });
+    return this.findOne({ email: email }).collation({locale: "en", strength: 1});
   }
   return this.find();
 };
@@ -70,11 +68,16 @@ userSchema.query.byPage = function(pageIndex, pageSize) {
 };
 
 userSchema.methods.generateHash = function(password) {
-  return bcrypt.hashSync(password, bcrypt.genSaltSync(10), null);
+  if(password){
+    return bcrypt.hashSync(password, bcrypt.genSaltSync(10), null);
+  }
 };
 
 userSchema.methods.validHashedPassword = function(password) {
-  return bcrypt.compareSync(password, this.password);
+  if(password){
+    return bcrypt.compareSync(password, this.password);
+  }
+  return false;
 };
 
 userSchema.methods.hasProvider = function(providerName) {
@@ -89,13 +92,11 @@ userSchema.methods.hasProvider = function(providerName) {
 };
 
 userSchema.methods.getProvider = function(providerName) {
-  if (this.providers.length < 1) return this;
+  if (this.providers.length < 1) return;
 
-  const provider = this.providers.find(p => {
+  return this.providers.find(p => {
     return p.provider === providerName;
   });
-
-  return provider;
 };
 
 userSchema.methods.removeProvider = function(providerName) {
@@ -110,7 +111,10 @@ userSchema.methods.removeProvider = function(providerName) {
 };
 
 userSchema.methods.validPassword = function(password) {
-  return passwordRegex.test(password);
+  if(password){
+    return passwordRegex.test(password);
+  }
+  return false;
 };
 
 module.exports = mongoose.model("User", userSchema);
