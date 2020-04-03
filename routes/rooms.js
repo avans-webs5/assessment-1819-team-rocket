@@ -179,7 +179,7 @@ module.exports = function (passport, user) {
                         return res.status(200).json({users: updatedRoom.users, statusCode: 200, message: "OK"});
                     });
                 } else {
-                    return res.status(304).send();
+                    return res.status(202).send();
                 }
             }
         }).catch(err => {
@@ -444,7 +444,7 @@ module.exports = function (passport, user) {
         let result = Room.findOne({id: req.params.id, 'users.user': req.params.userId }).select("users.roles");
         result.then(room => {
             if(room){
-                if(room.users[0].roles.includes(req.body.role)) return res.status(304).send();
+                if(room.users[0].roles.includes(req.body.role)) return res.status(202).send();
                 room.users[0].roles.push(req.body.role);
                 room.users[0].roles.remove("guest");
 

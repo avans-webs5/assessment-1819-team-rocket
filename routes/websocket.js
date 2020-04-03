@@ -149,7 +149,7 @@ module.exports = function (io) {
                     }
                 });
 
-                chatNsp.in(roomId).emit('listReordered', {from: from, to: to});
+                chatNsp.in(roomId).emit('queue updated', {from: from, to: to});
             } else {
                 disconnectSocket(socket, "room not found")
             }
