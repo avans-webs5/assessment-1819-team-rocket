@@ -22,6 +22,9 @@ app.use(
 
 app.use('/users', require('../routes/users'));
 
+
+let userIds = [];
+
 function getRequest(route, statusCode, done) {
     request(app)
         .get(route)
@@ -210,9 +213,8 @@ describe('MONGOOSE USER', function(){
             done();
         })
     });
-    let users = [];
-    before(function(done){
 
+    before(function(done){
         for (let i = 10; i < 22; i++){
             postRequest('/users', 200, {
                 email: "testclient"+ i +"@gmail.com",
@@ -220,26 +222,30 @@ describe('MONGOOSE USER', function(){
             }, function(err, res) {
                 if(err) done(err);
                 else {
-                    users.push(res.id);
+                    userIds.push(res.body.newUser.id);
                 }
             });
         }
         done();
     });
     it('user paginates automaticly', function(done){
+        this.timeout(10000);
         let result = User.find({}).byPage();
         result.then(user => {
 
-            expect(users.length).to.be.above(10);
+
+            expect(userIds.length).to.be.above(10);
             expect(user.length).to.be.equal(10);
             done();
         })
     });
     after(function(done){
-        for (let i = 1; i < 20; i++){
-            deleteRequest('/users' + users[i]+ i, 200, function(err, res) {});
+
+        for (let i = 0; i < userIds.length; i++){
+            deleteRequest('/users/' + userIds[i].replace('#', '_'), 200, function(err, res) {});
         }
         done();
+
     });
     it('invalid password does not pass validation check', function(done){
         let result = User.find({}).byName('testclient');

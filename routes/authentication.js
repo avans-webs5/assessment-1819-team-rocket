@@ -135,8 +135,7 @@ module.exports = function(app, passport) {
     passport.authenticate("google", {
       response_type: "code",
       scope: ["email", "profile"]
-    })
-  );
+    }));
 
   app.delete("/auth/google", passport.authenticate("jwt"), function(req, res) {
     let user = req.user;
