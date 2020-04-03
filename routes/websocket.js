@@ -26,6 +26,8 @@ module.exports = function (io) {
 
         socket.on('join room', (data) => joinRoom(socket, data));
         socket.on('send message', (data) => onMessageSend(socket, data));
+        socket.on('add url', (data) => addUrlToRoom(socket, data));
+        socket.on('update queue', (data) => swapQueueForRoom(socket, data))
     });
 
     // Data: msg, roomId
@@ -51,8 +53,7 @@ module.exports = function (io) {
                 messageResult.then(msg => {
                     room.messages.push(msg.id);
                     room.save(err => {
-                        if(err)
-                        {
+                        if (err) {
                             disconnectSocket(socket, err);
                         }
                     });
@@ -89,11 +90,82 @@ module.exports = function (io) {
         });
     };
 
+    function addUrlToRoom(socket, data) {
+        const link = data.link;
+        let roomId = getRoomOfSocket(socket);
+
+        const result = Room.findOne({id: roomId});
+        result.then(room => {
+            if (room) {
+                room.queue.push({link: link, timestamp: Date.now(), position: room.queue.length});
+
+                // If array length = 1; immediately play video.
+                if (room.queue.length === 1) {
+                    room.roomState.isPaused = false;
+                    room.roomState.videostamp = Date.now();
+                    chatNsp.in(roomId).emit('videoAddedPlay', {link: link});
+                } else {
+                    chatNsp.in(roomId).emit('videoAdded', {link: link});
+                }
+
+                room.save(err => {
+                    if (err) {
+                        disconnectSocket(socket, err);
+                    }
+                });
+            } else {
+                disconnectSocket(socket, "room not found")
+            }
+        });
+    }
+
+    function swapQueueForRoom(socket, data) {
+        const from = data.from;
+        const to = data.to;
+
+        let roomId = getRoomOfSocket(socket);
+
+        const result = Room.findOne({id: roomId});
+        result.then(room => {
+            if (room) {
+                let foundTo;
+                let foundFrom;
+                for (let i = 0; i < room.queue.length; i++) {
+                    if (room.queue[i].position === to) {
+                        foundTo = i;
+                    }
+
+                    if (room.queue[i].position === from) {
+                        foundFrom = i;
+                    }
+                }
+                room.queue[foundFrom] = to;
+                room.queue[foundTo] = from;
+
+                room.save(err => {
+                    if(err)
+                    {
+                        disconnectSocket(socket, "something went wrong when reordering.");
+                    }
+                });
+
+                chatNsp.in(roomId).emit('listReordered', {from: from, to: to});
+            } else {
+                disconnectSocket(socket, "room not found")
+            }
+        });
+    }
+
     const disconnectSocket = function (socket, message) {
-        console.log(message);
-        console.log("... disconnecting");
+        console.log(message + "... disconnecting");
         socket.disconnect();
     };
+
+    function getRoomOfSocket(socket) {
+        return Object.keys(socket.rooms).filter(function (item) {
+            return item !== socket.id;
+        });
+    }
 
     return io;
 };

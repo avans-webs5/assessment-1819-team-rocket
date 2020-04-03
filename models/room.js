@@ -25,12 +25,14 @@ const roomSchema = new Schema({
     messages: [{type: Schema.Types.ObjectId, ref: "Message"}],
     roomState: {
         isPaused: { type: Boolean, required: true },
-        videostamp: { type: Number, default: 0.0 },
+        // Tracks for when the users have started the video.
+        videostamp: { type: Date, default: Date.now },
         // deltatime: { type: Date, default: Date.now },
     },
     queue: [{
         link: { type: String, required: true },
-        timestamp: { type: Date, default: Date.now }
+        timestamp: { type: Date, default: Date.now },
+        position: { type: Number, required: true },
     }]
 });
 
