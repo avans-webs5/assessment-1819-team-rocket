@@ -96,9 +96,9 @@ roomSchema.methods.getMessagesByName = function (name) {
 
 roomSchema.methods.getMessageById = function (id) {
     if (id) {
-        for (let i = 0; i < this.messages.length; i++) {
-            if (this.messages[i]._id === id) {
-                return this.messages[i];
+        for (const message of this.messages){
+            if (message.id.toString() === id.toString()) {
+                return this.messages;
             }
         }
     }
@@ -106,10 +106,10 @@ roomSchema.methods.getMessageById = function (id) {
 
 roomSchema.methods.updateMessageById = function (id, newLine) {
     if (id && newLine) {
-        for (let i = 0; i < this.messages.length; i++) {
-            if (this.messages[i].id == id) {
-                this.messages[i].line = newLine;
-                return this.messages[i];
+        for (const message of this.messages){
+            if (message.id.toString() === id) {
+                message.line = newLine;
+                return message;
             }
         }
     }
@@ -117,9 +117,9 @@ roomSchema.methods.updateMessageById = function (id, newLine) {
 
 roomSchema.methods.removeMessageById = function (id) {
     if (id) {
-        for (let i = 0; i < this.messages.length; i++) {
-            if (this.messages[i].id === id) {
-                this.messages.remove(this.messages[i]);
+        for (const message of this.messages){
+            if (message.toString() === id) {
+                this.messages.remove(message);
                 return true;
             }
         }
