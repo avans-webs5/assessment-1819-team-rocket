@@ -139,8 +139,8 @@ module.exports = function (io) {
                         foundFrom = i;
                     }
                 }
-                room.queue[foundFrom] = to;
-                room.queue[foundTo] = from;
+                room.queue[foundFrom].position = to;
+                room.queue[foundTo].position = from;
 
                 room.save(err => {
                     if(err)
