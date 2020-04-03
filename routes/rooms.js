@@ -69,7 +69,7 @@ module.exports = function (passport, user) {
                 };
 
                 let newUser = {
-                    user: req.user._id,
+                    user: req.user.id,
                     roles: ["owner"]
                 };
 
@@ -163,8 +163,10 @@ module.exports = function (passport, user) {
             if(room.password && !room.validHashedPassword(req.body.password)){
                 return res.status(403).json({statusCode: 403, message: "Password incorrect"});
             } else {
-                if (req.body.user && !room.containsUser(req.body.user)) {
-                    room.users.push({user: req.body.user, roles: ["admin"]});
+
+                if (req.user && !room.containsUser(req.user.id)) {
+
+                    room.users.push({user: req.user.id, roles: ["admin"]});
                     room.save(function (err, updatedRoom) {
                         if (err) {
                             console.error(err);

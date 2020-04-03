@@ -18,13 +18,13 @@ const roomSchema = new Schema({
     categories: [{type: String, default: "public"}],
     users: [
         {
-            user: {type: Schema.Types.ObjectId, ref: "User"},
+            user: {type: String, ref: "User"},
             roles: [{type: String, default: "guest"}]
         }
     ],
     messages: [{type: Schema.Types.ObjectId, ref: "Message"}],
     roomState: {
-        isPaused: { type: Boolean, required: true },
+        isPaused: { type: Boolean,  default: false },
         videostamp: { type: Number, default: 0.0 },
         // deltatime: { type: Date, default: Date.now },
     },
@@ -37,6 +37,12 @@ const roomSchema = new Schema({
 roomSchema.set("toObject", {getters: true});
 roomSchema.set("toJSON", {getters: false});
 
+
+roomSchema.virtual('userData', {
+    ref: 'User',
+    localField: 'users.user',
+    foreignField: 'id'
+});
 
 roomSchema.methods.getUserRolesById = function (id) {
     for (let index = 0; index < this.users.length; index++) {
@@ -138,7 +144,8 @@ roomSchema.methods.removeCategoryById = function (id) {
 roomSchema.methods.containsUser = function (id) {
     if (id) {
         for (let i = 0; i < this.users.length; i++) {
-            if (this.users[i].user.toString().localeCompare(id.toString()) === 0) {
+            console.log(this.users[i] + ' ' + id);
+            if (this.users[i].user.toString() === id.toString()) {
                 return true;
             }
         }
