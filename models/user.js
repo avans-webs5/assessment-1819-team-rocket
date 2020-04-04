@@ -7,6 +7,8 @@ const emailRegex = new RegExp('^(([^<>()\\[\\]\\.,;:\\s@"]+(\\.[^<>()[]\\.,;:\\s
 const passwordRegex = new RegExp('^.*(?=.{8,})(?=.*[a-zA-Z])(?=.*\\d)(?=.*[!#$%&? "]).*$');
 
 //TODO: use name as custom id
+
+/* istanbul ignore next */
 const userSchema = new Schema({
   id: { type: String, required: true },
   name: { type: String, required: true },
@@ -84,7 +86,7 @@ userSchema.methods.hasProvider = function(providerName) {
   if (this.providers.length < 1) return true;
 
   for (let i = 0; i < this.providers.length; i++) {
-    if (this.providers[i].provider == providerName) {
+    if (this.providers[i].provider === providerName) {
       return true;
     }
   }
@@ -99,6 +101,7 @@ userSchema.methods.getProvider = function(providerName) {
   });
 };
 
+/* istanbul ignore next */
 userSchema.methods.removeProvider = function(providerName) {
   if (this.providers.length < 2 && this.password == null) return false;
 

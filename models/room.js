@@ -6,8 +6,9 @@ const bcrypt = require("bcryptjs");
 mongoose.set("useCreateIndex", true);
 
 //TODO: fix unique naming issue
+/* istanbul ignore next */
 const roomSchema = new Schema({
-    id: {type: String, unique: true, required: true},
+    id: {type: String, unique: true, validate: uniqueIdValidator },
     name: {type: String, unique: true, required: true},
     password: String,
     picture: String,
@@ -24,7 +25,7 @@ const roomSchema = new Schema({
     ],
     messages: [{type: Schema.Types.ObjectId, ref: "Message"}],
     roomState: {
-        isPaused: { type: Boolean, required: true },
+        isPaused: { type: Boolean, default: false },
         // Tracks for when the users have started the video.
         videostamp: { type: Date, default: Date.now },
         pausedAt: {type: Number, default: 0.0}
@@ -37,9 +38,23 @@ const roomSchema = new Schema({
     }]
 });
 
+function uniqueIdValidator(id){
+    let regex = new RegExp( "^\\b[a-zA-Z0-9_]+\\b");
+    return regex.test(id);
+}
+
 roomSchema.set("toObject", {getters: true});
 roomSchema.set("toJSON", {getters: false});
 
+roomSchema.pre('save', function(next){
+   this.id = this.name.replace(/\s/g, "_").toLowerCase();
+   next();
+});
+
+roomSchema.pre('update', function(next){
+    this.id = this.name.replace(/\s/g, "_").toLowerCase();
+    next();
+});
 
 roomSchema.virtual('userData', {
     ref: 'User',
@@ -82,7 +97,6 @@ roomSchema.methods.getMessagesByUserId = function (id) {
     }
     return this.messages;
 };
-
 
 roomSchema.methods.getMessagesByName = function (name) {
     if (name) {
