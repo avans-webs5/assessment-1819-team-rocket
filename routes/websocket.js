@@ -30,6 +30,8 @@ module.exports = function (io) {
         socket.on('update queue', (data) => swapQueueForRoom(socket, data));
         socket.on('video paused', (data) => pauseVideoForSocket(socket, data));
         socket.on('video resume', (data) => resumeVideoForSocket(socket, data));
+        socket.on('latest timestamp', (data) => {socket.to(getRoomOfSocket(socket)).emit('requestCurTimestamp')});
+        socket.on('sendCurTimestamp', data => {saveCurrentSaveData(socket, data)})
     });
 
     // Data: msg, roomId
@@ -88,8 +90,7 @@ module.exports = function (io) {
         }
 
         socket.join(roomId, function () {
-            chatNsp.in(roomId).emit('joined room', 'hello');
-            chatNsp.in(roomId).emit('request time');
+            socket.emit('joined room', 'hello');
         });
     };
 
@@ -218,6 +219,10 @@ module.exports = function (io) {
         return Object.keys(socket.rooms).filter(function (item) {
             return item !== socket.id;
         });
+    }
+
+    function saveCurrentSaveData(socket, data) {
+
     }
 
     return io;
