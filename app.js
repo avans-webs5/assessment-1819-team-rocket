@@ -86,7 +86,7 @@ app.use(function (err, req, res, next) {
         if (!err.name === "ValidationError") err.statusCode = 400;
         else if (!err.statusCode) err.statusCode = 500;
 
-        console.error(err.message);
+        console.error(err);
         res.status(err.statusCode).send(err.message);
     }
 });

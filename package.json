@@ -21,6 +21,7 @@
     "passport-google-oauth20": "^2.0.0",
     "passport-jwt": "^4.0.0",
     "passport-local": "^1.0.0",
+    "simple-youtube-api": "^5.2.1",
     "socket.io": "^2.3.0",
     "socketio-jwt": "^4.5.0",
     "socketio-jwt-decoder": "^2.0.4",

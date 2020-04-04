@@ -1,5 +1,7 @@
 const express = require("express");
 const router = express.Router();
+const YouTube = require('simple-youtube-api');
+const youtube = new YouTube('AIzaSyDD5bpQqcWno1Ukswe3ZqA_1fXF-w9Ht9I');
 
 const Room = require("../models/room");
 const Message = require("../models/message");
@@ -521,6 +523,50 @@ module.exports = function (passport, user) {
         });
     }
 
+    function getVideoInformation(req, res){
+        let result = Room.findOne({id: req.params.id});
+
+        result.then(room => {
+            if(room){
+                let clip = room.queue[req.params.videoPosition];
+                if(room.queue.length > 0 && clip){
+
+                    youtube.getVideo(clip.link)
+                        .then(v => {
+                            let video = {
+                                title: v.title,
+                                description: v.description,
+                                duration: v.duration.hours + ':' + v.duration.minutes + ':' + v.duration.seconds,
+                                link: clip.link,
+                                position: clip.position,
+                                timestamp: clip.timestamp,
+                            };
+                            return res.status(200).json({video, statusCode: 200, message: "OK"})
+                        }).catch(err => {
+                        console.error(err);
+                        return res.status(500).json({statusCode: 500, message: err.message});
+                    });
+
+                } else { return res.status(404).json({statusCode: 404, message: "Video Not Found"}); }
+            } else { return res.status(404).json({statusCode: 404, message: "Room Not Found"}); }
+        }).catch(err => {
+            console.error(err);
+            return res.status(500).json({statusCode: 500, message: "Internal Server Error"});
+        });
+    }
+
+    function getVideosFromQueue(req, res){
+        let result = Room.findOne({id: req.params.id});
+        result.then(room => {
+            if(room){
+                if(room.queue.length > 0){
+                    return res.status(200).json({videos: room.queue, statusCode: 200, message: "OK"})
+
+                } else { return res.status(404).json({statusCode: 404, message: "Videos Not Found"}); }
+            } else { return res.status(404).json({statusCode: 404, message: "Room Not Found"}); }
+        });
+    }
+
     router.route("/")
         .get(getRooms)
         .post(passport.authenticate("jwt", {session: false}), user.can("join room"), createRoom)
@@ -673,7 +719,33 @@ module.exports = function (passport, user) {
         .all(function (req, res) {
             res
                 .status(405)
-                .json({statusCode: 405, message: "Method Not Allowed", Allow: "DELETE"});
+                .json({statusCode: 405, message: "Method Not Allowed", Allow: "GET, DELETE"});
+        });
+
+    /////////////////////////////
+    ////:id/videos/'////////////
+    ///////////////////////////
+
+    //Only allow get because the rest is handle in the socket
+    router.route('/:id/videos')
+        .get(getVideosFromQueue)
+        .all(function (req, res) {
+            res
+                .status(405)
+                .json({statusCode: 405, message: "Method Not Allowed", Allow: "GET"});
+        });
+
+    /////////////////////////////
+    ////:id/videos/videoPosition
+    ///////////////////////////
+
+    //Only allow get because the rest is handle in the socket
+    router.route('/:id/videos/:videoPosition')
+        .get(getVideoInformation)
+        .all(function (req, res) {
+            res
+                .status(405)
+                .json({statusCode: 405, message: "Method Not Allowed", Allow: "GET"});
         });
 
     return router;
