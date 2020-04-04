@@ -313,7 +313,7 @@ module.exports = function (passport) {
             },
             function (payload, done) {
                 process.nextTick(function () {
-                    let userDocument = User.findOne({_id: payload._id});
+                    let userDocument = User.findOne({_id: payload.id});
                     let roomDocument = Room.find({"users.user": payload.id}).select(["id","users.roles"]);
 
                     userDocument
