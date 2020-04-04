@@ -93,27 +93,20 @@ module.exports = function (passport, user) {
     }
 
     function updateRoom(req, res) {
-        let id = req.params.id;
 
+        if(req.body.name) req.body.id = req.body.name.replace(/\s/g, "_");
         if(req.body.password) req.body.password = Room.generateHash(req.body.password);
-        if(req.body.name) id = req.body.name.replace(/\s/g, "_");
-
-        let updatedRoom = {
-            id: id.toLowerCase(),
-            name: req.body.name,
-            password: Room.generateHash(req.body.password),
-            picture: req.body.picture,
-        };
-
-        let result = Room.findOneAndUpdate({id: req.params.id}, updatedRoom);
+        let result = Room.findOneAndUpdate({id: req.params.id}, req.body, {new: true});
 
         result.then(room => {
-            return res.status(200).json({room, statusCode: 200, message: "OK"});
+            if(room){
+                return res.status(200).json({room, statusCode: 200, message: "OK"});
+            }else{
+                return res.status(404).json({statusCode: 404, message: "Room not found"});
+            }
         }).catch(err => {
             console.error(err);
-            return res
-                .status(400)
-                .json({statusCode: 400, message: "Bad Request"});
+            return res.status(500).json({statusCode: 500, message: err.message});
         });
     }
 
@@ -462,6 +455,26 @@ module.exports = function (passport, user) {
         });
     }
 
+    function getUserRole(req, res){
+        let result = Room.findOne({id: req.params.id, 'users.user': req.params.userId }).select("users.roles");
+        result.then(user => {
+            if(user){
+                console.log(user);
+                if(user.roles.include(req.params.role)){
+                    return res.status(200).json({ role: req.params.role, statusCode: 200, message: "OK"});
+                } else {
+                    return res.status(404).json({statusCode: 404, message: "Role Not Found"});
+                }
+
+            } else {
+                return res.status(404).json({statusCode: 404, message: "Room Not Found"});
+            }
+        }).catch(err =>{
+            console.error(err);
+            return res.status(500).json({statusCode: 500, message: "Internal Server Error"});
+        });
+    }
+
     function removeRoleFromUser(req, res){
         if(req.params.roleId === "guest") return res.status(400).json({statusCode: 400, message: "Can Not Remove Guest Role"});
         let result = Room.findOne({id: req.params.id, 'users.user': req.params.userId, 'users.roles': req.params.roleId }).select("users.roles");
@@ -602,6 +615,7 @@ module.exports = function (passport, user) {
     //////////////////////////////////
 
     router.route("/:id/users/:userId/roles/:roleId")
+        .get(getUserRole)
         .put(passport.authenticate("jwt", {session: false}), user.can("edit roles"), updateRoleFromUser)
         .delete(passport.authenticate("jwt", {session: false}), user.can("edit roles"), removeRoleFromUser)
         .all(function (req, res) {

@@ -31,7 +31,7 @@
     "serve": "set NODE_ENV=development&&nodemon",
     "start": "set NODE_ENV=production&&node app.js",
     "test": "mocha --exit",
-    "coverage": "nyc yarn run test"
+    "coverage": "nyc -x config -x test yarn run test"
   },
   "name": "chatroom-restapi",
   "version": "1.0.0",

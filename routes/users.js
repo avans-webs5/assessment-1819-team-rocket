@@ -117,7 +117,6 @@ function deleteUser(req, res){
 }
 
 function errorHandler(res, err) {
-
     //Catches duplicates in database
     if (err.code === 11000) {
         res.status(400).json({statusCode: 400, message: "User Already Exists"});
