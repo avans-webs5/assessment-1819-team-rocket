@@ -6,8 +6,10 @@ const jwt = require("jsonwebtoken");
 
 const mongoose = require('mongoose');
 const database = require('../config/database');
+
 const User = require('../models/user');
 const Room = require('../models/room');
+const Message = require('../models/message');
 
 const app = require('express')();
 const secret = require('../config/auth').JWS.secret;
@@ -120,15 +122,12 @@ function insertUser(id, name, done){
     newUser.save((err, user) => {
         if (err) done(err.message);
         else {
-            let payload = {id: user._id};
-            token = jwt.sign(payload, secret);
-
             let result = Room.findOne({id: id});
             result.then(room => {
                 if (room) {
                     room.users.push(newUser.id);
                     room.save();
-                    return newUser.name + '_' + newUser.discriminator;
+                    return testUserId = newUser.name + '_' + newUser.discriminator;
                 }
             }).catch(err => {
                 done(err);
@@ -139,8 +138,38 @@ function insertUser(id, name, done){
     });
 }
 
-function insertMessage(id, line){
-    
+function insertMessage(id, userId, line){
+    let result = Room.findOne({id: id});
+    result.then(room => {
+        if (room) {
+            let newMessage = {
+                sender: userId,
+                line: line
+            };
+
+            let messageResult = Message.create(newMessage);
+            messageResult.then(msg => {
+                room.messages.push(msg.id);
+                room.save(err => {
+                    if (err) {
+                        console.error(err);
+                        res.status(500).send("Internal Server Error");
+                    } else {
+                        res.status(201).json({msg, statusCode: 201, message: "Message Created"})
+                    }
+                });
+            }).catch(err => {
+                console.error(err);
+                res.status(500).send("Internal Server Error")
+            });
+
+        }
+
+    }).catch(err => {
+        console.error(err);
+        res.status(500).send("Internal Server Error");
+    });
+
 }
 
 function deleteRoom(id, done) {
@@ -383,6 +412,7 @@ describe('/ROOMS/:ID/USERS', function () {
     before(function (done) {
         insertRoom('testroom15');
         testUserId = insertUser("testroom15", "testuser213123", done);
+        insertMessage("testroom15", testUserId, "Hallo dit is een test message");
         done();
     });
     describe('POST:', function(){
@@ -459,24 +489,11 @@ describe('/ROOMS/:ID/USERS/MESSAGES', function () {
     describe('GET:', function () {
         const testroomId = "testroom15";
         it('get invalid user', function (done) {
-            getRequest(`/rooms/${testroomId}/users/${hashedUserId}/messages`, 404, function (err, res) {
+            getRequest(`/rooms/${testroomId}/users/${testUserId}/messages`, 404, function (err, res) {
                 if (err) {
                     done(err);
                 } else {
                     expect(res.body.users).to.be.undefined;
-                    done();
-                }
-            });
-        });
-    });
-    describe('DELETE:', function(){
-        const testroomId = "testroom15";
-        it('delete user and return 200', function(done){
-            deleteRequest(`/rooms/${testroomId}/users/${hashedUserId}`, 200,  token, function(err, res){
-                if (err) {
-                    done(err);
-                } else {
-                    expect(res.body).to.not.be.undefined;
                     done();
                 }
             });

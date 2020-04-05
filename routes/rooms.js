@@ -175,7 +175,7 @@ module.exports = function (passport, user) {
 
         result.then(room => {
             if (!room) {
-                return res.status(999).send("Room Not Found");
+                return res.status(404).send("Room Not Found");
             }
             if (room.password && (!room.validHashedPassword(req.body.password) && !room.containsUser(req.user.id))) {
                 return res.status(403).send("Password incorrect");
