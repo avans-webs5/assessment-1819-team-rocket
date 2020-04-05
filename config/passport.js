@@ -37,7 +37,7 @@ module.exports = function (passport) {
                 process.nextTick(function () {
                     User.findOne({email: email}, function (err, user) {
                         if (err) {
-                            console.log(err);
+                            console.err(err);
                             return done(err);
                         }
 
@@ -314,11 +314,10 @@ module.exports = function (passport) {
             function (payload, done) {
                 process.nextTick(function () {
                     let userDocument = User.findOne({_id: payload.id});
-                    let roomDocument = Room.find({"users.user": payload.id}).select(["id","users.roles"]);
 
-                    userDocument
-                        .then(user => {
+                    userDocument.then(user => {
                             if (user) {
+                                let roomDocument = Room.find({"users.user": user.id}).select(["id","users.roles"]);
                                 roomDocument.then(rooms => {
                                         if (rooms) user.extra.push(rooms);
                                         return done(null, user);
