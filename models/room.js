@@ -8,7 +8,7 @@ mongoose.set("useCreateIndex", true);
 //TODO: fix unique naming issue
 /* istanbul ignore next */
 const roomSchema = new Schema({
-    id: {type: String, unique: true, validate: uniqueIdValidator },
+    id: {type: String, unique: true, validate: uniqueIdValidator},
     name: {type: String, unique: true, required: true},
     password: String,
     picture: String,
@@ -23,35 +23,42 @@ const roomSchema = new Schema({
             roles: [{type: String, default: "guest"}]
         }
     ],
+    currentOnlineUsers: [
+        {
+            userName: {type: String},
+            countryCode: {type: String},
+            userId: {type: String}
+        }
+    ],
     messages: [{type: Schema.Types.ObjectId, ref: "Message"}],
     roomState: {
-        isPaused: { type: Boolean, default: false },
+        isPaused: {type: Boolean, default: false},
         // Tracks for when the users have started the video.
-        videostamp: { type: Date, default: Date.now },
-        pausedAt: {type: Number, default: 0.0}
-        // deltatime: { type: Date, default: Date.now },
+        videostamp: {type: Date, default: Date.now},
+        pausedAt: {type: Number, default: 0.0},
+        latestTimeStampRequest: {type: Number}
     },
     queue: [{
-        link: { type: String, required: true },
-        timestamp: { type: Date, default: Date.now },
-        position: { type: Number, required: true },
+        link: {type: String, required: true},
+        timestamp: {type: Date, default: Date.now},
+        position: {type: Number, required: true},
     }]
 });
 
-function uniqueIdValidator(id){
-    let regex = new RegExp( "^\\b[a-zA-Z0-9_]+\\b");
+function uniqueIdValidator(id) {
+    let regex = new RegExp("^\\b[a-zA-Z0-9_]+\\b");
     return regex.test(id);
 }
 
 roomSchema.set("toObject", {getters: true});
 roomSchema.set("toJSON", {getters: false});
 
-roomSchema.pre('save', function(next){
-   this.id = this.name.replace(/\s/g, "_").toLowerCase();
-   next();
+roomSchema.pre('save', function (next) {
+    this.id = this.name.replace(/\s/g, "_").toLowerCase();
+    next();
 });
 
-roomSchema.pre('update', function(next){
+roomSchema.pre('update', function (next) {
     this.id = this.name.replace(/\s/g, "_").toLowerCase();
     next();
 });
@@ -72,13 +79,13 @@ roomSchema.methods.getUserRolesById = function (id) {
 };
 
 roomSchema.statics.generateHash = function (password) {
-    if(password){
+    if (password) {
         return bcrypt.hashSync(password, bcrypt.genSaltSync(10), null);
     }
 };
 
 roomSchema.methods.validHashedPassword = function (password) {
-    if(password){
+    if (password) {
         return bcrypt.compareSync(password, this.password);
     }
     return false;
@@ -113,7 +120,7 @@ roomSchema.methods.getMessagesByName = function (name) {
 
 roomSchema.methods.getMessageById = function (id) {
     if (id) {
-        for (const message of this.messages){
+        for (const message of this.messages) {
             if (message.id.toString() === id.toString()) {
                 return this.messages;
             }
@@ -123,7 +130,7 @@ roomSchema.methods.getMessageById = function (id) {
 
 roomSchema.methods.updateMessageById = function (id, newLine) {
     if (id && newLine) {
-        for (const message of this.messages){
+        for (const message of this.messages) {
             if (message.id.toString() === id) {
                 message.line = newLine;
                 return message;
@@ -134,7 +141,7 @@ roomSchema.methods.updateMessageById = function (id, newLine) {
 
 roomSchema.methods.removeMessageById = function (id) {
     if (id) {
-        for (const message of this.messages){
+        for (const message of this.messages) {
             if (message.toString() === id) {
                 this.messages.remove(message);
                 return true;
@@ -148,7 +155,7 @@ roomSchema.methods.removeMessageById = function (id) {
 roomSchema.methods.removeCategoryById = function (id) {
     if (id) {
         for (let i = 0; i < this.categories.length; i++) {
-          console.log(this.categories[i] + ' ' + id);
+            console.log(this.categories[i] + ' ' + id);
             if (this.categories[i].toString() === id.toString()) {
                 this.categories.remove(this.categories[i]);
                 return true;
