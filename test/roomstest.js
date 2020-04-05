@@ -20,7 +20,6 @@ app.use(session({secret: secret, resave: true, saveUninitialized: false}));
 app.use(passport.initialize());
 app.use(passport.session());
 
-
 require("../config/passport")(passport);
 
 const user = new connectRoles({
@@ -55,11 +54,10 @@ function getRequest(route, statusCode, done) {
         .end(function (err, res) {
             if (err) done(err);
             else done(null, res);
-
         });
 }
 
-function postRequest(route, statusCode, data, token ,done) {
+function postRequest(route, statusCode, data, token, done) {
     request(app)
         .post(route)
         .set('Authorization', 'bearer ' + token)
@@ -72,9 +70,10 @@ function postRequest(route, statusCode, data, token ,done) {
         });
 }
 
-function deleteRequest(route, statusCode, done) {
+function deleteRequest(route, statusCode, token, done) {
     request(app)
         .delete(route)
+        .set('Authorization', 'bearer ' + token)
         .expect(statusCode)
         .end(function (err, res) {
             if (err) return done(err);
@@ -95,21 +94,59 @@ function putRequest(route, statusCode, data, token, done) {
         });
 }
 
-function insertRoom(name, password){
+function insertRoom(name, password) {
     let room = new Room;
     room.name = name;
     room.password = password;
 
     room.save((err, room) => {
-        if(err) throw new Error(err.message);
+        if (err) throw new Error(err.message);
         else return room;
     });
 }
 
-function deleteRoom(id, done){
+function insertUser(id, name, done){
+    let discriminator = Math.random().toString().substr(2, 4);
+    let username = name;
+    let newUser = new User();
+    newUser.id = username + "#" + discriminator;
+    newUser.name = username;
+    newUser.discriminator = discriminator;
+    newUser.email = `${name}@gmail.com`;
+    newUser.password = newUser.generateHash("Testing123!");
+    newUser.role = "admin";
+    newUser.profile_picture = "";
+
+    newUser.save((err, user) => {
+        if (err) done(err.message);
+        else {
+            let payload = {id: user._id};
+            token = jwt.sign(payload, secret);
+
+            let result = Room.findOne({id: id});
+            result.then(room => {
+                if (room) {
+                    room.users.push(newUser.id);
+                    room.save();
+                    return newUser.name + '_' + newUser.discriminator;
+                }
+            }).catch(err => {
+                done(err);
+                return false;
+            });
+            return false;
+        }
+    });
+}
+
+function insertMessage(id, line){
+    
+}
+
+function deleteRoom(id, done) {
     let result = Room.deleteOne({id: id});
     result.then(room => {
-        if(room) return true;
+        if (room) return true;
     }).catch(err => {
         done(err);
         return false;
@@ -118,6 +155,8 @@ function deleteRoom(id, done){
 }
 
 let token = "";
+let hashedUserId = "";
+let testUserId;
 
 before(function (done) {
     //Set up database connection
@@ -145,10 +184,10 @@ before(function (done) {
     });
 
     //Create valid user to test on
-    let discriminator =  Math.random().toString().substr(2, 4);
+    let discriminator = Math.random().toString().substr(2, 4);
     let username = "hashedclient";
     let newUser = new User();
-    newUser.id = username +  "#" + discriminator;
+    newUser.id = username + "#" + discriminator;
     newUser.name = username;
     newUser.discriminator = discriminator;
     newUser.email = "hashedclient@gmail.com";
@@ -159,7 +198,7 @@ before(function (done) {
     newUser.save((err, user) => {
         if (err) done(err.message);
         else {
-            let payload = { id: user._id };
+            let payload = {id: user._id};
             token = jwt.sign(payload, secret);
 
             done()
@@ -167,11 +206,11 @@ before(function (done) {
 
     });
 
-
+    hashedUserId = newUser.name + '_' + newUser.discriminator;
 });
 describe('/ROOMS ', function () {
 
-    before(function(done) {
+    before(function (done) {
         insertRoom('testroom');
         done();
     });
@@ -191,15 +230,15 @@ describe('/ROOMS ', function () {
             });
         });
     });
-    after(function(done){
+    after(function (done) {
         deleteRoom("testroom", done);
         done();
     });
     describe('POST:', function () {
-        describe('an invalid room', function() {
+        describe('an invalid room', function () {
             it('should not post room and return 400', function (done) {
                 let room = new Room();
-                postRequest('/rooms', 400, room, token,function (err, res) {
+                postRequest('/rooms', 400, room, token, function (err, res) {
 
                     if (err) {
                         done(err);
@@ -210,14 +249,14 @@ describe('/ROOMS ', function () {
                 });
             });
         });
-        describe('a valid room', function() {
+        describe('a valid room', function () {
             it('should post room and return 200', function (done) {
                 const roomName = "testroom2";
 
                 let room = new Room();
                 room.name = roomName;
 
-                postRequest('/rooms', 201, room, token,function (err, res) {
+                postRequest('/rooms', 201, room, token, function (err, res) {
 
                     if (err) {
                         done(err);
@@ -232,23 +271,23 @@ describe('/ROOMS ', function () {
                 });
             });
         });
-        after(function(done){
+        after(function (done) {
             deleteRoom("testroom2", done);
             done();
         });
     });
 });
 describe('/ROOMS/:ID ', function () {
-    before(function(done) {
+    before(function (done) {
         insertRoom('testroom3');
         done();
     });
     describe('GET:', function () {
-        describe('a valid room', function() {
+        describe('a valid room', function () {
             it('should give room and return 200', function (done) {
                 const roomName = "testroom3";
 
-                getRequest('/rooms/'+roomName, 200, function (err, res) {
+                getRequest('/rooms/' + roomName, 200, function (err, res) {
 
                     if (err) {
                         done(err);
@@ -262,7 +301,7 @@ describe('/ROOMS/:ID ', function () {
                 });
             });
         });
-        describe('an invalid room', function() {
+        describe('an invalid room', function () {
             it('should give nothing room and return 404', function (done) {
                 getRequest('/rooms/dfadsfasfd', 404, function (err, res) {
 
@@ -276,21 +315,20 @@ describe('/ROOMS/:ID ', function () {
                 });
             });
         })
-
     });
-    after(function(done){
+    after(function (done) {
         deleteRoom("testroom3", done);
         done();
     });
-    before(function(done) {
+    before(function (done) {
         insertRoom('testroom4');
         done();
     });
     describe('PUT:', function () {
-        describe('an invalid room', function() {
+        describe('an invalid room', function () {
             it('should not update room and return 404', function (done) {
                 let room = new Room();
-                putRequest('/rooms/sadadsaad', 404, room, token,function (err, res) {
+                putRequest('/rooms/sadadsaad', 404, room, token, function (err, res) {
 
                     if (err) {
                         done(err);
@@ -301,7 +339,7 @@ describe('/ROOMS/:ID ', function () {
                 });
             });
         });
-        describe('a valid room', function() {
+        describe('a valid room', function () {
             it('should post room and return 200', function (done) {
                 const roomName = "testroom4";
                 const newName = "testroom5";
@@ -310,8 +348,7 @@ describe('/ROOMS/:ID ', function () {
                     name: newName
                 };
 
-
-                putRequest('/rooms/'+roomName, 200, room, token,function (err, res) {
+                putRequest('/rooms/' + roomName, 200, room, token, function (err, res) {
 
                     if (err) {
                         done(err);
@@ -328,10 +365,126 @@ describe('/ROOMS/:ID ', function () {
             });
         });
     });
-    after(function(done){
+    after(function (done) {
         deleteRoom("testroom5", done);
         done();
     });
     describe('DELETE:', function () {
+        it('remove valid user and return 200', function (done) {
+            const roomName = "testroom5";
+            deleteRequest(`/rooms/${roomName}`, 200, token, done)
+        });
+
     });
+});
+describe('/ROOMS/:ID/USERS', function () {
+
+
+    before(function (done) {
+        insertRoom('testroom15');
+        testUserId = insertUser("testroom15", "testuser213123", done);
+        done();
+    });
+    describe('POST:', function(){
+        const testroomId = "testroom15";
+        it('insert valid user into the room and return 200', function(done){
+            postRequest(`/rooms/${testroomId}/users`, 200, {}, token, function(err, res){
+                if (err) {
+                    done(err);
+                } else {
+                    expect(res.body).to.not.be.undefined;
+                    expect(res.body).to.have.property('users');
+                    expect(res.body.users.length).to.be.above(0);
+                    done();
+                }
+            });
+        });
+    });
+    describe('GET:', function () {
+        const testroomId = "testroom15";
+        it('gets all users from room', function (done) {
+            getRequest(`/rooms/${testroomId}/users`, 200, function (err, res) {
+                if (err) {
+                    done(err);
+                } else {
+                    expect(res.body).to.not.be.undefined;
+                    expect(res.body).to.have.property('users');
+                    done();
+                }
+            });
+        });
+    });
+});
+describe('/ROOMS/:ID/USERS/:USERID', function () {
+
+    describe('GET:', function () {
+        const testroomId = "testroom15";
+        it('get valid user', function (done) {
+            getRequest(`/rooms/${testroomId}/users/${testUserId}`, 404, function (err, res) {
+                if (err) {
+                    done(err);
+                } else {
+                    expect(res.body.users).to.be.undefined;
+                    done();
+                }
+            });
+        });
+        it('get invalid user', function (done) {
+            getRequest(`/rooms/${testroomId}/users/dfadfasfdsaf`, 404, function (err, res) {
+                if (err) {
+                    done(err);
+                } else {
+                    expect(res.body.users).to.be.undefined;
+                    done();
+                }
+            });
+        });
+    });
+    describe('DELETE:', function(){
+        const testroomId = "testroom15";
+        it('delete user and return 200', function(done){
+            deleteRequest(`/rooms/${testroomId}/users/${testUserId}`, 200,  token, function(err, res){
+                if (err) {
+                    done(err);
+                } else {
+                    expect(res.body).to.not.be.undefined;
+                    done();
+                }
+            });
+        });
+    });
+});
+describe('/ROOMS/:ID/USERS/MESSAGES', function () {
+
+    describe('GET:', function () {
+        const testroomId = "testroom15";
+        it('get invalid user', function (done) {
+            getRequest(`/rooms/${testroomId}/users/${hashedUserId}/messages`, 404, function (err, res) {
+                if (err) {
+                    done(err);
+                } else {
+                    expect(res.body.users).to.be.undefined;
+                    done();
+                }
+            });
+        });
+    });
+    describe('DELETE:', function(){
+        const testroomId = "testroom15";
+        it('delete user and return 200', function(done){
+            deleteRequest(`/rooms/${testroomId}/users/${hashedUserId}`, 200,  token, function(err, res){
+                if (err) {
+                    done(err);
+                } else {
+                    expect(res.body).to.not.be.undefined;
+                    done();
+                }
+            });
+        });
+    });
+});
+
+after(function (done) {
+    deleteRoom('testroom15');
+    done();
 });

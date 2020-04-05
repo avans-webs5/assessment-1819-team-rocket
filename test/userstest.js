@@ -187,7 +187,7 @@ describe('TEST FOR USER CLASS', function() {
             let result = User.find({}).byRole('user');
             result.then(user => {
                 expect(user).to.not.be.undefined;
-                expect(user[0]).to.not.be.undefined;
+                expect(user.length).to.be.above(0);
                 expect(user[0]).to.have.property('role');
                 expect(user[0].role).to.be.equal("user");
                 done();

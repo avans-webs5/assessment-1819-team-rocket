@@ -166,8 +166,8 @@ roomSchema.methods.containsUser = function (id) {
                 return true;
             }
         }
-        return false;
     }
+    return false;
 };
 
 roomSchema.query.byName = function (name) {
@@ -198,7 +198,9 @@ roomSchema.query.byPage = function (pageIndex, pageSize) {
 
 roomSchema.query.byIdUsers = function (id) {
     if (id) {
-        return this.find({"users.id": id}).collation({
+        let userId = id.replace("_", "#");
+        console.log(userId);
+        return this.find({"users.user": userId}).collation({
             locale: "en",
             strength: 1
         });

@@ -44,7 +44,6 @@ module.exports = function (user) {
 
     user.use("edit room", "/:id", function (req) {
         let result = getUserRoomRoles(req);
-
         if (result) { return result.includes("admin") || result.includes("owner"); }
         return false;
     });
@@ -52,10 +51,8 @@ module.exports = function (user) {
     function getUserRoomRoles(req){
         let rooms = req.user.extra[0] || [];
         let result;
-
         for (let index = 0; index < rooms.length; index++) {
-
-            if (rooms[index].id === req.params.id) {
+            if (rooms[index].id.toString() === req.params.id) {
                 return result = rooms[index].users[0].roles;
             }
         }
