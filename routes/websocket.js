@@ -16,11 +16,37 @@ module.exports = function (io) {
         handshake: true
     }));
 
+
     chatNsp.on('connection', (socket) => {
         if (!socket.decoded_token) {
             disconnectSocket(socket, "Decoded token is undefined");
             return;
         }
+
+        socket.on('disconnect', () => {
+            const userId = socket.decoded_token.id;
+
+            let result = Room.find({'currentOnlineUsers.userId': userId});
+            result.then(rooms => {
+                if(rooms) {
+                    for (const room of rooms)
+                    {
+                        let index = room.currentOnlineUsers.findIndex(element => element.userId === userId);
+                        room.currentOnlineUsers.splice(index, 1);
+
+                        room.save(err => {
+                            if(err) {
+                                console.log("couldn't remove this fucker");
+                            }
+                            else
+                            {
+                                chatNsp.in(room.id).emit('send user info', { users: room.currentOnlineUsers });
+                            }
+                        })
+                    }
+                }
+            })
+        });
 
         console.log("Hello " + socket.decoded_token.id);
 
@@ -30,8 +56,50 @@ module.exports = function (io) {
         socket.on('update queue', (data) => swapQueueForRoom(socket, data));
         socket.on('video paused', (data) => pauseVideoForSocket(socket, data));
         socket.on('video resume', (data) => resumeVideoForSocket(socket, data));
-        socket.on('latest timestamp', (data) => {socket.to(getRoomOfSocket(socket)).emit('requestCurTimestamp')});
-        socket.on('sendCurTimestamp', data => {saveCurrentSaveData(socket, data)})
+        socket.on('latest timestamp', () => {
+            socket.to(getRoomOfSocket(socket)).emit('requestCurTimestamp')
+        });
+        socket.on('sendCurTimestamp', data => {
+            saveCurrentSaveData(socket, data)
+        });
+        socket.on('nextVideo', () => {
+            nextVideoOfQueue(socket)
+        });
+        socket.on('removeVideo', (data) => {
+            removeVideo(socket, data);
+        });
+        socket.on('send user info', (data) => {
+            const roomId = getRoomOfSocket(socket);
+            const userId = socket.decoded_token.id;
+
+            let result = Room.findOne({id: roomId});
+            result.then(room => {
+                if (room) {
+                    const username = data.userInfo.userName;
+                    const countyCode = data.userInfo.countryCode;
+
+                    let userFound = false;
+                    for (let i = 0; i < room.currentOnlineUsers.length; i++) {
+                        if (room.currentOnlineUsers[i].userName === username) {
+                            userFound = true;
+                            break;
+                        }
+                    }
+
+                    if(!userFound) {
+                        room.currentOnlineUsers.push({userName: username, countryCode: countyCode, userId: userId});
+                    }
+
+                    room.save(err => {
+                        if (err) {
+                            disconnectSocket(socket, "something went wrong while saving");
+                        }
+                    });
+
+                    chatNsp.in(roomId).emit('send user info', { users: room.currentOnlineUsers });
+                }
+            });
+        });
     });
 
     // Data: msg, roomId
@@ -90,7 +158,7 @@ module.exports = function (io) {
         }
 
         socket.join(roomId, function () {
-            socket.emit('joined room', 'hello');
+            chatNsp.to(roomId).emit('joined room', 'hello');
         });
     };
 
@@ -115,6 +183,34 @@ module.exports = function (io) {
                 room.save(err => {
                     if (err) {
                         disconnectSocket(socket, err);
+                    }
+                });
+            } else {
+                disconnectSocket(socket, "room not found")
+            }
+        });
+    }
+
+    function removeVideo(socket, data) {
+        const position = data.position;
+        let roomId = getRoomOfSocket(socket);
+
+        const result = Room.findOne({id: roomId});
+        result.then(room => {
+            if (room) {
+                room.queue.splice(position, 1);
+
+                for (let queueItem of room.queue) {
+                    if (Number(queueItem.position) >= position) {
+                        queueItem.position--;
+                    }
+                }
+
+                room.save(err => {
+                    if (err) {
+                        disconnectSocket(socket, err);
+                    } else {
+                        chatNsp.in(roomId).emit('removeVideo', {position: position});
                     }
                 });
             } else {
@@ -149,10 +245,11 @@ module.exports = function (io) {
                 room.save(err => {
                     if (err) {
                         disconnectSocket(socket, "something went wrong when reordering.");
+                    } else {
+                        chatNsp.in(roomId).emit('queue updated', {from: from, to: to});
                     }
                 });
 
-                chatNsp.in(roomId).emit('queue updated', {from: from, to: to});
             } else {
                 disconnectSocket(socket, "room not found")
             }
@@ -183,6 +280,9 @@ module.exports = function (io) {
         })
     }
 
+    function saveCurrentSaveData(socket, data) {
+        socket.to(getRoomOfSocket(socket)).emit('resume video', {timestamp: data.timestamp});
+    }
 
     function pauseVideoForSocket(socket, data) {
         const roomId = getRoomOfSocket(socket);
@@ -209,6 +309,34 @@ module.exports = function (io) {
         })
     }
 
+    function nextVideoOfQueue(socket) {
+        const roomId = getRoomOfSocket(socket);
+
+        const result = Room.findOne({id: roomId});
+        result.then(room => {
+            if (room) {
+                for (let queueItem of room.queue) {
+                    if (Number(queueItem.position) <= 0) {
+                        let index = room.queue.indexOf(queueItem);
+                        room.queue.splice(index, 1);
+                    }
+                }
+                for (let queueItem of room.queue) {
+                    queueItem.position--;
+                }
+
+                room.save(err => {
+                    if (err) {
+                        disconnectSocket(socket, "couldn't save the ")
+                    }
+                });
+
+                chatNsp.in(roomId).emit('nextVideo');
+            } else {
+                disconnectSocket(socket, "couldn't find the room");
+            }
+        })
+    }
 
     const disconnectSocket = function (socket, message) {
         console.log(message + "... disconnecting");
@@ -221,9 +349,6 @@ module.exports = function (io) {
         });
     }
 
-    function saveCurrentSaveData(socket, data) {
-
-    }
 
     return io;
 };
