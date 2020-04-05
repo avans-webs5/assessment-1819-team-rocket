@@ -569,7 +569,7 @@ module.exports = function (passport, user) {
                 let clip = room.queue[req.params.videoPosition];
                 if (room.queue.length > 0 && clip) {
 
-                    youtube.getVideo(clip.link)
+                    youtube.getVideo(decodeURIComponent(clip.link))
                         .then(v => {
                             let video = {
                                 title: v.title,
