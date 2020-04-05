@@ -24,6 +24,8 @@ module.exports = function (io) {
         }
 
         socket.on('disconnect', () => {
+            console.log("disconnect user");
+
             const userId = socket.decoded_token.id;
 
             let result = Room.find({'currentOnlineUsers.userId': userId});
@@ -327,7 +329,7 @@ module.exports = function (io) {
 
                 room.save(err => {
                     if (err) {
-                        disconnectSocket(socket, "couldn't save the ")
+                        disconnectSocket(socket, "couldn't save the room")
                     }
                 });
 
